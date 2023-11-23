@@ -1,0 +1,41 @@
+.answers-button {
+    background-color: #3498db;
+    color: white;
+    width: 100%;
+    height: 100%;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.answers-button-pressed-win{
+    background-color: #228b22;
+    color: white;
+    width: 100%;
+    height: 100%;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.answers-button-pressed-lose{
+    background-color: #900020;
+    color: white;
+    width: 100%;
+    height: 100%;
+    margin-bottom: 10px;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}

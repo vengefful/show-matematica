@@ -1,0 +1,26 @@
+h1{
+    text-align: center;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.form-group label {
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  padding: 8px;
+  font-size: 10px;
+  width: 70%;
+}
+
+.form-group button {
+    font-size: 12px;
+    margin-top: 5px;
+}

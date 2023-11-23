@@ -1,0 +1,17 @@
+p{
+    text-align: center;
+}
+
+.container {
+    margin: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.item {
+    margin: 10px;
+    width: auto;
+}
+

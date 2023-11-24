@@ -36,7 +36,7 @@ const doesDataExist = async (name, nota, time) => {
 
 //Rota de exemplo para dados
 app.get('/api/data', (req, res) => {
-    const filePath = path.join(__dirname, 'questoes', 'questions.csv');
+    const filePath = path.join(__dirname, 'questoes', 'questions-geo.csv');
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if(err) {
@@ -55,6 +55,7 @@ app.get('/api/data', (req, res) => {
                 return obj;
             }, {});
         });
+        dados.pop()
         res.json(dados);
     });
 });

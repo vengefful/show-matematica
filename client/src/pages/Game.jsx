@@ -5,11 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
 import Timer from '../Components/Timer';
+import parse from 'html-react-parser';
 
 
 function Game(props) {
 
-    const numQuestions = 2;
+    const numQuestions = 20;
     const [win, setWin] = useState(false);
     const navigate = useNavigate();
 
@@ -18,9 +19,9 @@ function Game(props) {
     }
 
     useEffect(() => {
-        props.setNum(random(0, props.data.length));
+        props.setNum(random(0, props.data.length - 1));
 
-    }, []);
+    }, [props.rodada]);
 
     const toGameOver = () => {
         navigate('/gameover');
@@ -34,7 +35,7 @@ function Game(props) {
             else{
                 console.log("errou");
             }
-            props.setNum(random(0, props.data.length));
+            // props.setNum(random(0, props.data.length));
             props.setRodada(props.rodada + 1);
         }
         else{
@@ -64,10 +65,14 @@ function Game(props) {
         // Adicione aqui a lógica que deseja executar quando o botão é tocado
       };
 
-      const handleButtonTouchEnd = () => {
-        // console.log('Toque no botão encerrado!');
-        // Adicione aqui a lógica que deseja executar quando o toque no botão é encerrado
-      };
+    const handleButtonTouchEnd = () => {
+    // console.log('Toque no botão encerrado!');
+    // Adicione aqui a lógica que deseja executar quando o toque no botão é encerrado
+    };
+
+    const handleCopy = (event) => {
+        event.preventDefault();
+    }
 
 
     return (
@@ -80,8 +85,8 @@ function Game(props) {
                 <Timer rodada={props.rodada} questionAnswered={questionAnswered}/>
             </div>
             <h1>Rodada {props.rodada}</h1>
-            <div className="question">
-                <p><Latex>{props.data[props.num]?.question}</Latex></p>
+            <div className="question" onCopy={handleCopy}>
+                {parse(props.data[props.num]?.question)}
         {console.log(props.data[props.num]?.r1, props.data[props.num]?.r2, props.data[props.num]?.r3, props.data[props.num]?.r4)}
             </div>
             <div className="answers-container">

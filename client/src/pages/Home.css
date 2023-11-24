@@ -1,16 +1,29 @@
+body {
+    background-color: aquamarine;
+    font-family: Arial, sans-serif;
+}
+
 h1{
+    font-size: 25px;
     text-align: center;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
   align-items: center;
+  border: 2px solid #3498db;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: antiquewhite;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  max-width: auto;
+  margin: 10% auto;
 }
 
 .form-group label {
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: bold;
   margin-bottom: 5px;
 }
 
@@ -18,9 +31,23 @@ h1{
   padding: 8px;
   font-size: 10px;
   width: 70%;
+  background-color: #fbfcfc;
 }
 
 .form-group button {
+    display: inline-block;
+    padding: 5px 10px;
     font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
     margin-top: 5px;
+    border-radius: 5px;
+    background-color: #d7f4f4;
+    color: black;
+}
+
+.form-group button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 }

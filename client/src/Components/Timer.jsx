@@ -3,12 +3,7 @@ import './Timer.css';
 import { useNavigate } from 'react-router-dom';
 
 function Timer(props) {
-    const [timer, setTimer] = useState(10);
-    const navigate = useNavigate();
-
-    const toGameOver = () => {
-        navigate('/gameover');
-    }
+    const [timer, setTimer] = useState(180);
 
     useEffect(() => {
 
@@ -26,7 +21,7 @@ function Timer(props) {
     }, [timer]);
 
     useEffect(() => {
-        setTimer(10);
+        setTimer(180);
     }, [props.rodada]);
 
     const formatTime = () => {
@@ -41,7 +36,7 @@ function Timer(props) {
     }
 
     return(
-        <div>
+        <div className="timer">
             {formatTime()}
         </div>
     );

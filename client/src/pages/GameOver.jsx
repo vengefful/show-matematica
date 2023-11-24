@@ -34,16 +34,16 @@ function GameOver(props){
         <div>
             <div className="container">
                 <div className="item">
-                    <h1>Game Over</h1>
+                    <h1>{props.nota >= 6 ? "PARABÉNS" : "GAME OVER"}</h1>
                 </div>
                 <div className="item">
                     <p>Parabéns <b>{props.name}</b></p>
                 </div>
                 <div className="item">
-                    <p>Sua Nota foi <b>{props.nota}</b></p>
+                    <p>Sua Nota foi <b>{Number(props.nota).toFixed(1)}</b></p>
                 </div>
                 <div className="item">
-                    <button onClick={newGame}>Tente Novamente</button>
+                    <button className="button-novamente" onClick={newGame}>Tente Novamente</button>
                 </div>
             </div>
         </div>

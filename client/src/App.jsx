@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Link, Routes, NavLink} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, NavLink} from 'react-router-dom';
 import api from './Api';
 import './App.css';
 import Home from './pages/Home';
 import Game from './pages/Game';
 import GameOver from './pages/GameOver';
 import Rank from './pages/Rank';
+import Info from './pages/Info';
 
 
 const App = () => {
@@ -41,8 +42,9 @@ const App = () => {
             <Routes>
                 <Route exact path='/' element={<Home name={name} setName={setName} data={data} setRodada={setRodada} setNota={setNota}/>} />
                 <Route path='/game' element={<Game name={name} data={data} nota={nota} setNota={setNota} num={num} setNum={setNum} qa={qa} setQa={setQa} rodada={rodada} setRodada={setRodada}/>}  />
-                <Route path='/gameover' element={<GameOver name={name} nota={nota} setNota={setNota} setRodada={setRodada} />} />
+                <Route path='/gameover' element={<GameOver name={name} nota={nota} setNota={setNota} setRodada={setRodada} setNum={setNum} />} />
                 <Route path='/api/rank' element={<Rank name={name} nota={nota} setNota={setNota} setRodada={setRodada} />} />
+                <Route path='/api/info' element={<Info/>} />
             </Routes>
         </Router>
     );

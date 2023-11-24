@@ -1,5 +1,6 @@
 body{
     font-family: Arial, sans-serif;
+    background-color: #e1fbff;
 }
 
 .score{
@@ -9,7 +10,8 @@ body{
 
 .score-itens{
     margin-top: 1%;
-    padding: 5px auto;
+    padding: 5px;
+    font-weight: bold;
 }
 
 
@@ -18,9 +20,10 @@ h1{
 }
 
 .question {
+    background-color: #effafc;
     max-width: 400px;
     margin: 20px auto;
-    padding: 20px;
+    padding: 5px;
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 11px;
@@ -29,13 +32,14 @@ h1{
 
 .answers-container{
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    /* flex-wrap: wrap; */
     justify-content: space-between;
 }
 
 .answers {
-    width: 42%;
+    width: 97%;
     margin-bottom: 10px;
-    padding: 10px;
+    padding: 5px;
     text-align: center;
 }

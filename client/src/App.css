@@ -4,24 +4,24 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    background-color: #333;
+    background-color: #e1fbff;
 }
 
 .navbar a {
     text-decoration: none;
-    color: white;
+    color: black;
     padding: 8px 16px;
-    border: 2px solid transparent;
+    border: 2px solid #bfebf3;
     border-radius: 4px;
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 .navbar a:hover {
-    background-color: #555;
+    background-color: #bfebf3;
 }
 
 .navbar a.active {
-    background-color: #555;
-    border-color: #fff;
-    color: #fff;
+    background-color: #bfebf3;
+    border-color: #9be0ec;
+    color: black;
 }

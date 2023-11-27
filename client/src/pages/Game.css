@@ -26,8 +26,12 @@ h1{
     padding: 5px;
     border: 1px solid #ccc;
     border-radius: 8px;
-    font-size: 11px;
-    text-align: center;
+    font-size: 12px;
+    text-align: justify;
+}
+
+.question p {
+    text-align: justify;
 }
 
 .answers-container{
@@ -42,4 +46,18 @@ h1{
     margin-bottom: 10px;
     padding: 5px;
     text-align: center;
+}
+
+/* Media query para tablets (por exemplo, iPads em modo paisagem) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Estilos específicos para tablets */
+    
+}
+
+/* Media query para desktops */
+@media (min-width: 1025px) {
+    /* Estilos específicos para desktops */
+    .question {
+        max-width: 700px;
+    }
 }

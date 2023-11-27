@@ -2,7 +2,7 @@ p{
     text-align: center;
 }
 
-.container {
+.container-gameover {
     margin: 20%;
     display: flex;
     justify-content: center;
@@ -10,7 +10,7 @@ p{
     flex-direction: column;
 }
 
-.item {
+.item-gameover {
     margin: 10px;
     width: auto;
 }

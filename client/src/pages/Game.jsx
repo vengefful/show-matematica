@@ -6,10 +6,11 @@ import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
 import Timer from '../Components/Timer';
 import parse from 'html-react-parser';
-
+import api from '../Api';
 
 function Game(props) {
 
+    const [aleatorio, setAleatorio] = useState([1, 2, 3, 4]);
     const numQuestions = 20;
     const [win, setWin] = useState(false);
     const navigate = useNavigate();
@@ -18,9 +19,31 @@ function Game(props) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    const shuffle = (array) => {
+        for (let i = array.length - 1; i > 0; i--){
+            const j = Math.floor(Math.random() * (1 + 2));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
     useEffect(() => {
         props.setNum(random(0, props.data.length - 1));
 
+    }, [props.rodada]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await api.get(`/api/pergunta?disciplina=${props.disciplina}&turma=${props.turma}`);
+                // console.log(response.data);
+                props.setPergunta(response.data);
+            } catch(error) {
+                console.log('Erro ao buscar os dados', error);
+            }
+        };
+        setAleatorio(shuffle(aleatorio));
+        fetchData();
     }, [props.rodada]);
 
     const toGameOver = () => {
@@ -33,7 +56,7 @@ function Game(props) {
                 props.setNota(props.nota + 0.5);
             }
             else{
-                console.log("errou");
+                //adicionar errou
             }
             // props.setNum(random(0, props.data.length));
             props.setRodada(props.rodada + 1);
@@ -86,21 +109,20 @@ function Game(props) {
             </div>
             <h1>Rodada {props.rodada}</h1>
             <div className="question" onCopy={handleCopy}>
-                {parse(props.data[props.num]?.question)}
-        {console.log(props.data[props.num]?.r1, props.data[props.num]?.r2, props.data[props.num]?.r3, props.data[props.num]?.r4)}
+                {props.pergunta?.pergunta}
             </div>
             <div className="answers-container">
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.data[props.num]?.q1} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.data[props.num]?.r1 === 'TRUE' ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[0]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[0] ? true : false} setWin={setWin} />
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.data[props.num]?.q2} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.data[props.num]?.r2 === 'TRUE' ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[1]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[1] ? true : false} setWin={setWin} />
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.data[props.num]?.q3} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.data[props.num]?.r3 === 'TRUE' ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[2]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[2] ? true : false} setWin={setWin} />
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.data[props.num]?.q4} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.data[props.num]?.r4 ==='TRUE' ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[3]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[3] ? true : false} setWin={setWin} />
                 </div>
             </div>
         </div>

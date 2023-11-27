@@ -39,3 +39,23 @@
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
+/* Media query para tablets (por exemplo, iPads em modo paisagem) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Estilos específicos para tablets */
+    
+}
+
+/* Media query para desktops */
+@media (min-width: 1025px) {
+    /* Estilos específicos para desktops */
+    .answers-button {
+        width: 40%;
+    }
+    .answers-button-pressed-lose {
+        width: 40%;
+    }
+    .answers-button-pressed-win {
+        width: 40%;
+    }
+}

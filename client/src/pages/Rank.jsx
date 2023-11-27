@@ -9,7 +9,7 @@ function Rank(props) {
     useEffect(() => {
         const fetchData = async () => {
             try{
-                const response = await api.get('/api/rank');
+                const response = await api.get(`/api/rank?disciplina=Matematica&turma=9-ano`);
                 setRankData(response.data);
             } catch(error){
                 console.error('Erro ao buscar dados do CSV:', error);

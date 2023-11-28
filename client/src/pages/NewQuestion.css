@@ -28,11 +28,11 @@
 body {
     background-color:aquamarine;
 }
-  
+
   h1{
       text-align: center;
 }
-  
+
 .form-group {
 display: flex;
 flex-direction: column;
@@ -46,7 +46,7 @@ box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 max-width: 400px;
 margin: 0 auto;
 }
-  
+
 .form-group label {
 font-size: 14px;
 font-weight: bold;
@@ -95,6 +95,7 @@ box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
     text-align: justify;
     border: 1px solid #ccc;
     background-color:#fbfcfc;
+    min-width: 380px;
 }
 
 .lista-perguntas-0 {

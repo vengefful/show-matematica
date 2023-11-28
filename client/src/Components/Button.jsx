@@ -10,8 +10,7 @@ function Button(props){
         if(props.onTouchStart){
             props.onTouchStart();
         }
-        props.setWin(props.win);
-        props.onClick();
+        props.onClick(props.resultado);
         delay();
     };
 
@@ -24,7 +23,7 @@ function Button(props){
 
 
     return (
-        <button className={!isPressed ? props.classButton : props.win ? 'answers-button-pressed-win' : 'answers-button-pressed-lose'} onClick={handleTouchStart} onTouchStart={handleTouchStart}>
+        <button className={!isPressed ? props.classButton : props.resultado ? 'answers-button-pressed-win' : 'answers-button-pressed-lose'} onClick={handleTouchStart} >
             {props.text}
         </button>
     );

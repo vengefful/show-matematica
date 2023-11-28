@@ -1,4 +1,4 @@
-h2{
+h2, h3, h4{
     text-align: center;
 }
 
@@ -24,10 +24,18 @@ h2{
     border: 1px solid black;
 }
 
+.items-escolha {
+    margin: 10px;
+}
+
+.items-escolha label{
+    padding: 5px;
+}
+
 /* Media query para tablets (por exemplo, iPads em modo paisagem) */
 @media (min-width: 768px) and (max-width: 1024px) {
     /* Estilos específicos para tablets */
-    
+
 }
 
 /* Media query para desktops */
@@ -36,5 +44,5 @@ h2{
     .custom-table th,
     .custom-table td {
         font-size: 14px;
-    }    
+    }
 }

@@ -51,3 +51,11 @@ h1{
   outline: none;
   box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 }
+
+.items-escolha {
+    margin: 10px;
+}
+
+.items-escolha label{
+    padding: 5px;
+}

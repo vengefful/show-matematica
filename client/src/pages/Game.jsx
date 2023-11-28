@@ -7,12 +7,12 @@ import Latex from 'react-latex-next';
 import Timer from '../Components/Timer';
 import parse from 'html-react-parser';
 import api from '../Api';
+import Question from '../Components/Question';
 
 function Game(props) {
 
     const [aleatorio, setAleatorio] = useState([1, 2, 3, 4]);
-    const numQuestions = 20;
-    const [win, setWin] = useState(false);
+    const numQuestions = 2;
     const navigate = useNavigate();
 
     const random = (min,max) => {
@@ -35,7 +35,7 @@ function Game(props) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await api.get(`/api/pergunta?disciplina=${props.disciplina}&turma=${props.turma}`);
+                const response = await api.get(`/api/pergunta?disciplina=${props.disciplina}&turma=${props.turma.charAt(0)}-ano`);
                 // console.log(response.data);
                 props.setPergunta(response.data);
             } catch(error) {
@@ -46,40 +46,53 @@ function Game(props) {
         fetchData();
     }, [props.rodada]);
 
-    const toGameOver = () => {
+    const sendData = async (nota) => {
+        try {
+            const response = await api.post(`/api/completed?nome=${props.name}&nota=${nota}&escola=${props.escola}&disciplina=${props.disciplina}&turma=${props.turma}`);
+            console.log(response.data);
+        } catch(error) {
+            console.log('Erro ao enviar os dados', error);
+        }
+    };
+
+    const toGameOver = (nota) => {
+        sendData(nota);
         navigate('/gameover');
     }
 
-    const questionAnswered = () => {
+    const questionAnswered = (resultado) => {
         if (props.rodada < numQuestions){
-            if(win){
-                props.setNota(props.nota + 0.5);
+            if(resultado){
+                props.setNota(prevNota =>  prevNota + 0.5);
             }
             else{
                 //adicionar errou
             }
             // props.setNum(random(0, props.data.length));
-            props.setRodada(props.rodada + 1);
+            props.setRodada(prevRodada => prevRodada + 1);
         }
         else{
-            if(win){
-                props.setNota(props.nota + 0.5);
+            if(resultado){
+                props.setNota(prevNota => prevNota + 0.5);
+                const nota = props.nota + 0.5;
+                props.setRodada(1);
+                toGameOver(nota);
+            } else{
+                props.setRodada(1);
+                toGameOver(props.nota);
             }
-            setWin(false);
-            props.setRodada(1);
-            toGameOver();
         }
     }
 
-    const delay = (() => {
+    const delay = ((resultado) => {
         setTimeout(() => {
-            questionAnswered();
+            questionAnswered(resultado);
         }, 1000);
     })
 
-    const handleAnswer = () => {
+    const handleAnswer = (resultado) => {
         // console.log('Botão Clicado!!!!!!!!!');
-        delay();
+        delay(resultado);
 
     }
 
@@ -104,25 +117,29 @@ function Game(props) {
                 <p className="score-itens">Acertos: {props.nota * 2} / 20</p>
                 <p className="score-itens">Pontuação: {props.nota.toFixed(1)} / 10</p>
             </div>
-            <div>
-                <Timer rodada={props.rodada} questionAnswered={questionAnswered}/>
+            <div className="h1-timer">
+                <div className="h1-timer-item">
+                    <Timer rodada={props.rodada} questionAnswered={questionAnswered}/>
+                </div>
+                <div className="h1-timer-item2">
+                    <h1>Rodada {props.rodada}</h1>
+                </div>
             </div>
-            <h1>Rodada {props.rodada}</h1>
             <div className="question" onCopy={handleCopy}>
-                {props.pergunta?.pergunta}
+                <Question pergunta={props.pergunta.pergunta} />
             </div>
             <div className="answers-container">
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[0]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[0] ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[0]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} resultado={props.pergunta?.resposta === aleatorio[0] ? true : false}/>
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[1]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[1] ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[1]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} resultado={props.pergunta?.resposta === aleatorio[1] ? true : false}/>
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[2]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[2] ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[2]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} resultado={props.pergunta?.resposta === aleatorio[2] ? true : false}/>
                 </div>
                 <div className="answers">
-                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[3]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} win={props.pergunta?.resposta === aleatorio[3] ? true : false} setWin={setWin} />
+                    <Button classButton="answers-button" text={props.pergunta?.[`alternativa${aleatorio[3]}`]} onClick={handleAnswer} onTouchStart={handleButtonTouchStart} onTouchEnd={handleButtonTouchEnd} resultado={props.pergunta?.resposta === aleatorio[3] ? true : false}/>
                 </div>
             </div>
         </div>

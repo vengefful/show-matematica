@@ -48,10 +48,18 @@ h1{
     text-align: center;
 }
 
+.h1-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+
 /* Media query para tablets (por exemplo, iPads em modo paisagem) */
 @media (min-width: 768px) and (max-width: 1024px) {
     /* Estilos específicos para tablets */
-    
+
 }
 
 /* Media query para desktops */

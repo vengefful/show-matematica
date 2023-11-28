@@ -38,7 +38,7 @@ function NewQuestion(props) {
     }, [pesquisa]);
 
     const textareaRef = useRef(null);
-    
+
     const handlePerguntaChange = (event) => {
         setPergunta(event.target.value);
     };
@@ -158,7 +158,7 @@ function NewQuestion(props) {
             setAlternativa3('');
             setAlternativa4('');
         }, 2000);
-        
+
     };
 
     return (
@@ -198,8 +198,11 @@ function NewQuestion(props) {
                             <option value="7-ano">7º ano</option>
                             <option value="8-ano">8º ano</option>
                             <option value="9-ano">9º ano</option>
+                            <option value="1-ano-medio">1º ano médio</option>
+                            <option value="2-ano-medio">2º ano médio</option>
+                            <option value="3-ano-medio">3º ano médio</option>
                         </select>
-                        
+
                         <button onClick={sendQuestion}>{!enviado ? 'Adicionar Pergunta' : 'Pergunta Enviada'}</button>
                     </div>
                 </div>
@@ -220,7 +223,7 @@ function NewQuestion(props) {
                                     <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
                                         {pergunta.id.toString().padStart(4, '0')} - {' '}
                                         {pergunta.disciplina} - {' '}
-                                        {pergunta.turma} {': '}  
+                                        {pergunta.turma} {': '}
                                         {pergunta.pergunta}
                                         {/* Renderize outros detalhes das perguntas conforme necessário */}
                                     </p>
@@ -229,7 +232,7 @@ function NewQuestion(props) {
                                         <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
                                             {pergunta.id.toString().padStart(4, '0')} - {' '}
                                             {pergunta.disciplina} - {' '}
-                                            {pergunta.turma} {': '}  
+                                            {pergunta.turma} {': '}
                                             {pergunta.pergunta}
                                         </p>
                                     ))

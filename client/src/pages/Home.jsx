@@ -63,7 +63,7 @@ function Home(props) {
                         <label>Turma:</label>
                         <select value={props.turma} onChange={props.handleEscolherTurma}>
                             <option value="">Selecione</option>
-                            {props.turmasLimaCastro[props.disciplina].map((item, index) => (
+                            {props.turmasLimaCastro[props.disciplina]?.map((item, index) => (
                                 <option key={index} value={item}>
                                     {item}
                                 </option>
@@ -93,7 +93,7 @@ function Home(props) {
                         <label>Turma:</label>
                         <select value={props.turma} onChange={props.handleEscolherTurma}>
                             <option value="">Selecione</option>
-                            {props.turmasOrlandoDantas[props.disciplina].map((item, index) => (
+                            {props.turmasOrlandoDantas[props.disciplina]?.map((item, index) => (
                                 <option key={index} value={item}>
                                     {item}
                                 </option>

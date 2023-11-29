@@ -5,16 +5,28 @@ const cors = require('cors');
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const csv = require('csv-parser');
 const sqlite3 = require("sqlite3").verbose();
+const multer = require('multer');
 
 const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'imagens/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.originalname);
+    }
+});
+
+const upload = multer({ storage })
+
 // folder static
 app.use(express.static(path.join(__dirname, 'questoes')));
 app.use(express.static(path.join(__dirname, 'rank')));
+app.use(express.static(path.join(__dirname, 'imagens')));
 app.use(express.json());
-
 
 //Habilitar o CORS para todas as requisições
 app.use(cors());
@@ -248,6 +260,11 @@ app.post('/api/completed', (req, res) => {
             res.status(200).json({ message: 'Pessoa adicionada com sucesso!' });
         }
     );
+});
+
+app.post('/api/upload',upload.single('imagem'), (req, res) => {
+    console.log('Imagem recebida', req.file);
+    res.send('Imagem recebida com sucesso');
 });
 
 const PORT = process.env.PORT || 5000;

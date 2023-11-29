@@ -16,6 +16,7 @@ function NewQuestion(props) {
     const [disciplina, setDisciplina] = useState('');
     const [turma, setTurma] = useState('');
     const [perguntas, setPerguntas] = useState([]);
+    const [imagem, setImagem] = useState(null);
 
     useEffect(() => {
         api.get('/api/perguntas')
@@ -125,14 +126,43 @@ function NewQuestion(props) {
             case '9-ano':
                 setTurma('9-ano');
                 break;
+            case '1-ano':
+                setTurma('1-ano');
+                break;
+            case '2-ano':
+                setTurma('2-ano');
+                break;
+            case '3-ano':
+                setTurma('3-ano');
+                break;
             default:
                 setTurma('');
                 break;
         }
     };
 
+    const handleFileChange = (event) => {
+        setImagem(event.target.files[0]);
+    };
+
     const sendQuestion = () => {
+
+        const formData = new FormData();
+        formData.append('imagem', imagem)
+
         setEnviado(true);
+
+        try {
+            const response = api.post('/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            console.log('Resposta do servidor:', response.data);
+        } catch(error) {
+            console.log('Erro ao enviar imagem', error);
+        }
+
         try {
             const response = api.post('/api/addquestion', {
                 pergunta: pergunta,
@@ -161,6 +191,7 @@ function NewQuestion(props) {
 
     };
 
+
     return (
         <div className="new-question">
             <div className='container-item'>
@@ -169,6 +200,8 @@ function NewQuestion(props) {
                     <div className="form-group">
                         <label htmlFor="nome">Digite o Problema</label>
                         <textarea className="pergunta" type="text" name="nome" value={pergunta} onChange={handlePerguntaChange} row="40" cols={100} placeholder="Digite a pergunta aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
+                        <label htmlFor="nome">Selecione Imagem</label>
+                        <input className="input-imagem" type="file" onChange={handleFileChange} />
                         <label htmlFor="nome">Digite a Pergunta 1</label>
                         <textarea className="alternativa" type="text" name="nome" value={alternativa1} onChange={handleAlternativa1Change} row="20" cols={100} placeholder="Digite a alternativa 1 aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
                         <label htmlFor="nome">Digite a Pergunta 2</label>
@@ -198,9 +231,9 @@ function NewQuestion(props) {
                             <option value="7-ano">7º ano</option>
                             <option value="8-ano">8º ano</option>
                             <option value="9-ano">9º ano</option>
-                            <option value="1-ano-medio">1º ano médio</option>
-                            <option value="2-ano-medio">2º ano médio</option>
-                            <option value="3-ano-medio">3º ano médio</option>
+                            <option value="1-ano">1º ano médio</option>
+                            <option value="2-ano">2º ano médio</option>
+                            <option value="3-ano">3º ano médio</option>
                         </select>
 
                         <button onClick={sendQuestion}>{!enviado ? 'Adicionar Pergunta' : 'Pergunta Enviada'}</button>

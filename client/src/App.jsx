@@ -22,12 +22,12 @@ const App = () => {
     const [turma, setTurma] = useState('');
     const [escola, setEscola] =  useState('');
     const disciplinas = {
-        'Lima Castro': ['Matemática', 'Geografia'],
+        'Lima Castro': ['Matematica', 'Geografia'],
         'Orlando Dantas': ['Geografia'],
         'Sabino Ribeiro': ['Geografia']
     };
     const turmasLimaCastro = {
-        'Matemática': ['1M02', '1M03', '1I01', '1I02'],
+        'Matematica': ['1M02', '1M03', '1I01', '1I02'],
         'Geografia': ['1M02', '1I02'],
     };
     const turmasOrlandoDantas = {

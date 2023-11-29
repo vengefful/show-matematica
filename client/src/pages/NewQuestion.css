@@ -16,6 +16,13 @@
     resize: 'none';
 }
 
+.input-imagem {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    resize: 'none';
+}
+
 .alternativa {
     width: 350px;
     height: 50px;
@@ -153,4 +160,8 @@ box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 
 .form-group-b p {
     padding: 0.5em;
+}
+
+img {
+    width: 100%;
 }

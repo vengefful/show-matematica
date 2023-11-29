@@ -17,6 +17,7 @@ function NewQuestion(props) {
     const [turma, setTurma] = useState('');
     const [perguntas, setPerguntas] = useState([]);
     const [imagem, setImagem] = useState(null);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         api.get('/api/perguntas')
@@ -187,6 +188,9 @@ function NewQuestion(props) {
             setAlternativa2('');
             setAlternativa3('');
             setAlternativa4('');
+            if(fileInputRef.current){
+                fileInputRef.current.value = '';
+            }
         }, 2000);
 
     };
@@ -201,7 +205,7 @@ function NewQuestion(props) {
                         <label htmlFor="nome">Digite o Problema</label>
                         <textarea className="pergunta" type="text" name="nome" value={pergunta} onChange={handlePerguntaChange} row="40" cols={100} placeholder="Digite a pergunta aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
                         <label htmlFor="nome">Selecione Imagem</label>
-                        <input className="input-imagem" type="file" onChange={handleFileChange} />
+                        <input className="input-imagem" type="file" ref={fileInputRef} onChange={handleFileChange} />
                         <label htmlFor="nome">Digite a Pergunta 1</label>
                         <textarea className="alternativa" type="text" name="nome" value={alternativa1} onChange={handleAlternativa1Change} row="20" cols={100} placeholder="Digite a alternativa 1 aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
                         <label htmlFor="nome">Digite a Pergunta 2</label>

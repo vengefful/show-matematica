@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../Api';
 
 const Question = (props) => {
     const paragrafos = props.pergunta?.split('\n');
+    const [imagemURL, setImagemURL] = useState('');
 
     const extrairCaminhoImagem = () => {
 
@@ -17,7 +19,7 @@ const Question = (props) => {
     return(
         <>
             {paragrafos?.map((paragrafo, index) => (
-                <p key={index}>{paragrafo.charAt(0) !== '<' ? paragrafo : (extrairCaminhoImagem() && <img src={extrairCaminhoImagem()} alt="imagem" />)}</p>
+                <p key={index}>{paragrafo.charAt(0) !== '<' ? paragrafo : (extrairCaminhoImagem() && <img src={extrairCaminhoImagem()} alt="IMAGEM" />)}</p>
             ))}
         </>
     );

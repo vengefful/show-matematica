@@ -10,6 +10,7 @@ const multer = require('multer');
 const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
+const imagens = path.join(__dirname, 'imagens');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -265,6 +266,12 @@ app.post('/api/completed', (req, res) => {
 app.post('/api/upload',upload.single('imagem'), (req, res) => {
     console.log('Imagem recebida', req.file);
     res.send('Imagem recebida com sucesso');
+});
+
+app.get('/api/imagens/:imagem', (req, res) => {
+    const img = req.params;
+    console.log(img);
+    res.sendFile(path.join(__dirname, 'imagens', img));
 });
 
 const PORT = process.env.PORT || 5000;

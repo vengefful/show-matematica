@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './NewQuestion.css';
 import api from '../Api';
+import Question from '../Components/Question';
 
 function NewQuestion(props) {
 
@@ -250,6 +251,10 @@ function NewQuestion(props) {
                             <label htmlFor="nome">Pesquise</label>
                                 <textarea className="pergunta-pesquisar" type="text" name="nome" value={pesquisa} onChange={handlePesquisaChange} row="40" cols={100} placeholder="Digite a pergunta a pesquisar..." style={{ resize: 'none', overflowY: 'hidden'}}/>
                             </div>
+                    </div>
+                    <div className='form-group-b'>
+                            <h3>Questão</h3>
+                            <Question pergunta={pergunta} />
                     </div>
                 </div>
                 <div className='item'>

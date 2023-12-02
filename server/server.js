@@ -339,6 +339,44 @@ app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
     })
 });
 
+app.get('/api/search-pergunta/:disciplina', (req, res) => {
+    const {disciplina} = req.params;
+    const searchText = req.query.text;
+
+    if(!searchText){
+        res.status(400).json({ error: 'Texto de pesquisa não fornecido'});
+        return;
+    }
+
+    const query = `SELECT * FROM perguntas WHERE disciplina = ? AND pergunta LIKE '%${searchText}%'`;
+
+    db.all(query, [disciplina], (err, rows) => {
+        if(err) {
+            return res.status(500).json( {error: err.message });
+        }
+        res.status(200).json(rows);
+    })
+});
+
+app.get('/api/search-pergunta/:disciplina/:turma', (req, res) => {
+    const {disciplina, turma } = req.params;
+    const searchText = req.query.text;
+
+    if(!searchText){
+        res.status(400).json({ error: 'Texto de pesquisa não fornecido'});
+        return;
+    }
+
+    const query = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? AND pergunta LIKE '%${searchText}%'`;
+
+    db.all(query, [disciplina, turma], (err, rows) => {
+        if(err) {
+            return res.status(500).json( {error: err.message });
+        }
+        res.status(200).json(rows);
+    })
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Servidor Express rodando na porta ${PORT}`);

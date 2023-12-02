@@ -58,13 +58,34 @@ function NewQuestion(props) {
     }, [enviado, disciplinaPesquisada, turmaPesquisada]);
 
     useEffect(() => {
-        api.get(`/api/search-pergunta?text=${pesquisa}`)
-        .then(response => {
-            setDadosPesquisados(response.data);
-        })
-        .catch(error => {
+        if (disciplinaPesquisada === ''){
+            api.get(`/api/search-pergunta?text=${pesquisa}`)
+            .then(response => {
+                setDadosPesquisados(response.data);
+            })
+            .catch(error => {
 
-        })
+            })
+        } else {
+            if (turmaPesquisada === ''){
+                api.get(`/api/search-pergunta/${disciplinaPesquisada}?text=${pesquisa}`)
+                .then(response => {
+                    setDadosPesquisados(response.data);
+                })
+                .catch(error => {
+
+                })
+
+            } else{
+                api.get(`/api/search-pergunta/${disciplinaPesquisada}/${turmaPesquisada}?text=${pesquisa}`)
+                .then(response => {
+                    setDadosPesquisados(response.data);
+                })
+                .catch(error => {
+
+                })
+            }
+        }
     }, [pesquisa]);
 
     const textareaRef = useRef(null);

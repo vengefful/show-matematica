@@ -37,6 +37,8 @@ const App = () => {
         'Geografia': ['6A', '7A'],
     };
     const escolas = ['Lima Castro', 'Orlando Dantas', 'Sabino Ribeiro'];
+    const disciplinasMinistradas = ['Matematica', 'Geografia'];
+    const seriesMinistradas = ['6-ano', '7-ano', '8-ano', '9-ano', '1-ano', '2-ano', '3-ano'];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -139,7 +141,7 @@ const App = () => {
                 <Route path='/gameover' element={<GameOver name={name} nota={nota} setNota={setNota} setRodada={setRodada} setNum={setNum} disciplina={disciplina} turma={turma} />} />
                 <Route path='/api/rank' element={<Rank name={name} nota={nota} setNota={setNota} setRodada={setRodada} disciplina={disciplina} turma={turma} escola={escola} />} />
                 <Route path='/api/info' element={<Info/>} />
-                <Route path='/api/newquestion' element={<NewQuestion disciplina={disciplina} />} />
+                <Route path='/api/newquestion' element={<NewQuestion disciplina={disciplina} disciplinasMinistradas={disciplinasMinistradas} handleEscolherDisciplina={handleEscolherDisciplina} seriesMinistradas={seriesMinistradas} />} />
             </Routes>
         </Router>
     );

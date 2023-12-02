@@ -16,21 +16,46 @@ function NewQuestion(props) {
     const [resposta, setResposta] = useState(0);
     const [disciplina, setDisciplina] = useState('');
     const [turma, setTurma] = useState('');
+    const [turmaPesquisada, setTurmaPesquisada] = useState('');
     const [perguntas, setPerguntas] = useState([]);
     const [imagem, setImagem] = useState(null);
     const [imageName, setImageName] = useState('');
     const [newNameImg, setNewNameImg] = useState('');
+    const [disciplinaPesquisada, setDisciplinaPesquisa] = useState('');
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        api.get('/api/perguntas')
-        .then(response => {
-            setPerguntas(response.data);
-        })
-        .catch(error => {
-            console.log('Erro ao buscar perguntas: ', error);
-        })
-    }, [enviado]);
+        console.log(disciplinaPesquisada, turmaPesquisada);
+        if (disciplinaPesquisada === ''){
+            api.get('/api/perguntas')
+            .then(response => {
+                setPerguntas(response.data);
+            })
+            .catch(error => {
+                console.error(error);
+            })
+        }
+        else {
+            if (turmaPesquisada === '') {
+                api.get(`/api/perguntas/${disciplinaPesquisada}`)
+                .then(response => {
+                    setPerguntas(response.data.perguntas);
+                })
+                .catch(error => {
+
+                })
+            }
+            else {
+                api.get(`/api/perguntas/${disciplinaPesquisada}/${turmaPesquisada}`)
+                .then(response => {
+                    setPerguntas(response.data.perguntas);
+                })
+                .catch(error => {
+
+                })
+            }
+        }
+    }, [enviado, disciplinaPesquisada, turmaPesquisada]);
 
     useEffect(() => {
         api.get(`/api/search-pergunta?text=${pesquisa}`)
@@ -38,7 +63,7 @@ function NewQuestion(props) {
             setDadosPesquisados(response.data);
         })
         .catch(error => {
-            console.log('Erro ao buscar perguntas: ', error);
+
         })
     }, [pesquisa]);
 
@@ -114,6 +139,22 @@ function NewQuestion(props) {
         }
     };
 
+    const handleEscolherDisciplinaPesquisa = (event) => {
+        const disciplinaSelecionada = event.target.value;
+
+        switch (disciplinaSelecionada) {
+            case 'Matematica':
+                setDisciplinaPesquisa('Matematica');
+                break;
+            case 'Geografia':
+                setDisciplinaPesquisa('Geografia');
+                break;
+            default:
+                setDisciplinaPesquisa('');
+                break;
+        }
+    };
+
     const handleEscolherTurma = (event) => {
         const turmaSelecionada = event.target.value;
 
@@ -145,6 +186,37 @@ function NewQuestion(props) {
         }
     };
 
+    const handleEscolherTurmaPesquisada = (event) => {
+        const turmaSelecionada = event.target.value;
+
+        switch (turmaSelecionada) {
+            case '6-ano':
+                setTurmaPesquisada('6-ano');
+                break;
+            case '7-ano':
+                setTurmaPesquisada('7-ano');
+                break;
+            case '8-ano':
+                setTurmaPesquisada('8-ano');
+                break;
+            case '9-ano':
+                setTurmaPesquisada('9-ano');
+                break;
+            case '1-ano':
+                setTurmaPesquisada('1-ano');
+                break;
+            case '2-ano':
+                setTurmaPesquisada('2-ano');
+                break;
+            case '3-ano':
+                setTurmaPesquisada('3-ano');
+                break;
+            default:
+                setTurmaPesquisada('');
+                break;
+        }
+    };
+
     useEffect(() => {
         if(imagem){
             sendImage();
@@ -162,7 +234,7 @@ function NewQuestion(props) {
                 setNewNameImg(response.data.ultimoID);
                 return response.data.ultimoID;
             } catch(error) {
-                console.log('Erro ao enviar imagem', error);
+
             }
         };
 
@@ -183,7 +255,7 @@ function NewQuestion(props) {
             const data = await response.data;
             setImageName(response.data.imageName);
         } catch(error) {
-            console.log('Erro ao enviar imagem', error);
+
         }
     };
 
@@ -207,9 +279,8 @@ function NewQuestion(props) {
                 turma: turma
             });
 
-            console.log(response.data);
         } catch(error) {
-            console.log('Erro ao enviar os dados', error);
+
         }
 
         setTimeout(() => {
@@ -288,16 +359,40 @@ function NewQuestion(props) {
                     </div>
                 </div>
                 <div className='item'>
-                    <h1>Lista de questões ({perguntas.length})</h1>
+                    <h1>Lista de questões ({dadosPesquisados && pesquisa.length > 0 ? dadosPesquisados.length : perguntas.length})</h1>
                     <div className='form-group-b'>
+                            <div className="items-escolha">
+                                <label>Disciplina:</label>
+                                <select value={disciplinaPesquisada} onChange={handleEscolherDisciplinaPesquisa}>
+                                    <option value="">Selecione</option>
+                                    {props.disciplinasMinistradas?.map((item, index) => (
+                                        <option key={index} value={item}>
+                                            {item}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {disciplinaPesquisada && (
+                                <div className="items-escolha">
+                                    <label>Série:</label>
+                                    <select value={turmaPesquisada} onChange={handleEscolherTurmaPesquisada}>
+                                        <option value="">Selecione</option>
+                                        {props.seriesMinistradas.map((item, index) => (
+                                            <option key={index} value={item}>
+                                                {`${item.charAt(0)} ano`}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                </div>
+                            )}
+
                             <div className='lista-items'>
                                 {pesquisa.length === 0 ? (perguntas.map(pergunta => (
                                     <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
-                                        {pergunta.id.toString().padStart(4, '0')} - {' '}
-                                        {pergunta.disciplina} - {' '}
-                                        {pergunta.turma} {': '}
+                                        {pergunta.id.toString().padStart(4, '0')}: {' '}
                                         {pergunta.pergunta}
-                                        {/* Renderize outros detalhes das perguntas conforme necessário */}
                                     </p>
                                 ))) :(
                                     dadosPesquisados.map(pergunta => (

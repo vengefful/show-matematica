@@ -25,9 +25,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 // folder static
-app.use(express.static(path.join(__dirname, 'questoes')));
-app.use(express.static(path.join(__dirname, 'rank')));
-app.use(express.static(path.join(__dirname, 'imagens')));
+// app.use(express.static(path.join(__dirname, 'questoes')));
+// app.use(express.static(path.join(__dirname, 'rank')));
+// app.use(express.static(path.join(__dirname, 'imagens')));
 app.use(express.json());
 
 //Habilitar o CORS para todas as requisições
@@ -315,6 +315,28 @@ app.get('/api/ultimoID', (req, res) => {
         const ultimoID = row && row.ultimo_id ? row.ultimo_id + 1 : 1;
         res.json({ ultimoID });
     });
+});
+
+app.get('/api/perguntas/:disciplina', (req, res) => {
+    const {disciplina} = req.params;
+
+    db.all(`SELECT * FROM perguntas WHERE disciplina = ?`, [disciplina], (err, rows) => {
+        if(err) {
+            return res.status(500).json( {error: err.message });
+        }
+        res.status(200).json({ perguntas: rows });
+    })
+});
+
+app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
+    const {disciplina, turma} = req.params;
+
+    db.all(`SELECT * FROM perguntas WHERE disciplina = ? AND turma = ?`, [disciplina, turma], (err, rows) => {
+        if(err) {
+            return res.status(500).json( {error: err.message });
+        }
+        res.status(200).json({ perguntas: rows });
+    })
 });
 
 const PORT = process.env.PORT || 5000;

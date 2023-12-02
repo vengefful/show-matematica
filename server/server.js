@@ -10,15 +10,16 @@ const multer = require('multer');
 const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
-const imagens = path.join(__dirname, 'imagens');
+
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'imagens/');
     },
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    }
+    filename: async (req, file, cb) => {
+        const ultimoID = await newID();
+        cb(null, ultimoID.toString() + path.extname(file.originalname));
+    },
 });
 
 const upload = multer({ storage })
@@ -52,6 +53,23 @@ const db = new sqlite3.Database(dbPath, (err) => {
         createTable();
     }
 });
+
+const newID = () => {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT MAX(id) AS ultimo_id FROM perguntas';
+
+        db.get(query, [], (err, row) => {
+            if (err) {
+                reject(err.message);
+                return;
+            }
+
+            const ultimoID = row && row.ultimo_id ? row.ultimo_id + 1 : 1;
+            resolve(ultimoID);
+        });
+
+    });
+};
 
 // Fechar a conexão com o banco de dados (geralmente feito ao encerrar a aplicação)
 process.on('SIGINT', () => {
@@ -235,6 +253,8 @@ app.get('/api/rank/:escola/:disciplina/:turma', (req, res) => {
 });
 
 app.get('/', (req, res) => {
+
+
     res.send("Olá Mundo! Está é a página inicial");
 });
 
@@ -264,14 +284,37 @@ app.post('/api/completed', (req, res) => {
 });
 
 app.post('/api/upload',upload.single('imagem'), (req, res) => {
-    console.log('Imagem recebida', req.file);
-    res.send('Imagem recebida com sucesso');
+
+    try {
+        if(!req.file){
+            return res.status(400).send('Nenhuma imagem foi enviada');
+        }
+
+        const imageName = req.file.filename;
+        res.status(200).json({ imageName });
+    } catch (error) {
+        res.status(500).send('Erro interno no servidor');
+    }
 });
 
 app.get('/api/imagens/:imagem', (req, res) => {
-    const img = req.params;
-    console.log(img);
-    res.sendFile(path.join(__dirname, 'imagens', img));
+    const img  = req.params;
+    const imagemPath = path.join(__dirname, 'imagens', img.imagem);
+    res.sendFile(imagemPath);
+});
+
+app.get('/api/ultimoID', (req, res) => {
+    const query = 'SELECT MAX(id) AS ultimo_id FROM perguntas';
+
+    db.get(query, [], (err, row) => {
+        if (err) {
+            res.status(500).send('Erro ao obter ultimo ID');
+            return;
+        }
+
+        const ultimoID = row && row.ultimo_id ? row.ultimo_id + 1 : 1;
+        res.json({ ultimoID });
+    });
 });
 
 const PORT = process.env.PORT || 5000;

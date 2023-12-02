@@ -3,12 +3,11 @@ import api from '../Api';
 
 const Question = (props) => {
     const paragrafos = props.pergunta?.split('\n');
-    const [imagemURL, setImagemURL] = useState('');
 
-    const extrairCaminhoImagem = () => {
+    const extrairCaminhoImagem = (texto) => {
 
-        const regex = /<([^<>]+)>/; // Regex para capturar o conteúdo entre < e >
-        const match = props.pergunta?.match(regex);
+        const regex = /<img\s([^<>]+)>/; // Regex para capturar o conteúdo entre < e >
+        const match = texto?.match(regex);
 
         if(match){
             return(match[1]);
@@ -19,7 +18,7 @@ const Question = (props) => {
     return(
         <>
             {paragrafos?.map((paragrafo, index) => (
-                <p key={index}>{paragrafo.charAt(0) !== '<' ? paragrafo : (extrairCaminhoImagem() && <img src={extrairCaminhoImagem()} alt="IMAGEM" />)}</p>
+                <p key={index}>{typeof extrairCaminhoImagem(paragrafo) === 'undefined' ? paragrafo : (<img src={`/api/imagens/${extrairCaminhoImagem(paragrafo)}`} alt="IMAGEM" />)}</p>
             ))}
         </>
     );

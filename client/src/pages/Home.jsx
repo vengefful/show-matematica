@@ -123,7 +123,7 @@ function Home(props) {
                         <label>Turma:</label>
                         <select value={props.turma} onChange={props.handleEscolherTurma}>
                             <option value="">Selecione</option>
-                            {props.turmasSabinoRibeiro[props.disciplina].map((item, index) => (
+                            {props.turmasSabinoRibeiro[props.disciplina]?.map((item, index) => (
                                 <option key={index} value={item}>
                                     {item}
                                 </option>

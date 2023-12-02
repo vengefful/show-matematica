@@ -18,6 +18,8 @@ function NewQuestion(props) {
     const [turma, setTurma] = useState('');
     const [perguntas, setPerguntas] = useState([]);
     const [imagem, setImagem] = useState(null);
+    const [imageName, setImageName] = useState('');
+    const [newNameImg, setNewNameImg] = useState('');
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -143,27 +145,55 @@ function NewQuestion(props) {
         }
     };
 
+    useEffect(() => {
+        if(imagem){
+            sendImage();
+            // setImageName(imagem.name);
+            const addText = `\n<img ${newNameImg}${imagem.name.slice(imagem.name.lastIndexOf('.'))}>\n`;
+            setPergunta(prevPergunta => prevPergunta + addText);
+        }
+    }, [imagem]);
+
+    useEffect(() => {
+        const getID = async () => {
+
+            try {
+                const response = await api.get('/api/ultimoID');
+                setNewNameImg(response.data.ultimoID);
+                return response.data.ultimoID;
+            } catch(error) {
+                console.log('Erro ao enviar imagem', error);
+            }
+        };
+
+        getID();
+    }, [enviado]);
+
+    const sendImage = async () => {
+        const formData = new FormData();
+        formData.append('imagem', imagem)
+
+        try {
+            const response = await api.post('/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            const data = await response.data;
+            setImageName(response.data.imageName);
+        } catch(error) {
+            console.log('Erro ao enviar imagem', error);
+        }
+    };
+
     const handleFileChange = (event) => {
         setImagem(event.target.files[0]);
     };
 
     const sendQuestion = () => {
 
-        const formData = new FormData();
-        formData.append('imagem', imagem)
-
         setEnviado(true);
-
-        try {
-            const response = api.post('/api/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            console.log('Resposta do servidor:', response.data);
-        } catch(error) {
-            console.log('Erro ao enviar imagem', error);
-        }
 
         try {
             const response = api.post('/api/addquestion', {
@@ -254,7 +284,7 @@ function NewQuestion(props) {
                     </div>
                     <div className='form-group-b'>
                             <h3>Questão</h3>
-                            <Question pergunta={pergunta} />
+                            <Question pergunta={pergunta} imageName={imageName}/>
                     </div>
                 </div>
                 <div className='item'>

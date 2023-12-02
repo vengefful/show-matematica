@@ -170,14 +170,6 @@ app.get('/api/pergunta', (req, res) => {
     const disciplina = req.query.disciplina;
     const turma = req.query.turma;
 
-    /*db.get('SELECT * FROM perguntas ORDER BY RANDOM() LIMIT 1', (err, row) => {
-        if(err){
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json(row);
-    });*/
-
     query = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM() LIMIT 1`;
 
     db.get(query, [disciplina, turma], (err, row) => {
@@ -374,6 +366,19 @@ app.get('/api/search-pergunta/:disciplina/:turma', (req, res) => {
             return res.status(500).json( {error: err.message });
         }
         res.status(200).json(rows);
+    })
+});
+
+app.get('/api/pergunta/:id', (req, res) => {
+    const {id} = req.params;
+
+    const query = `SELECT * FROM perguntas WHERE id = ?`;
+
+    db.all(query, [id], (err, row) => {
+        if(err) {
+            return res.status(500).json( {error: err.message });
+        }
+        res.status(200).json(row);
     })
 });
 

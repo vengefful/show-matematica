@@ -397,9 +397,7 @@ function NewQuestion(props) {
                                 ))) :(
                                     dadosPesquisados.map(pergunta => (
                                         <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
-                                            {pergunta.id.toString().padStart(4, '0')} - {' '}
-                                            {pergunta.disciplina} - {' '}
-                                            {pergunta.turma} {': '}
+                                            {pergunta.id.toString().padStart(4, '0')}: {' '}
                                             {pergunta.pergunta}
                                         </p>
                                     ))

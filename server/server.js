@@ -22,12 +22,14 @@ const storage = multer.diskStorage({
     },
 });
 
+const uploadCsv = multer({ dest: 'uploads/' });
+
 const upload = multer({ storage })
 
 // folder static
-// app.use(express.static(path.join(__dirname, 'questoes')));
 // app.use(express.static(path.join(__dirname, 'rank')));
-// app.use(express.static(path.join(__dirname, 'imagens')));
+// app.use(express.static(path.join(__dirname, 'questoes')));
+// app.use('/imagens', express.static(path.join(__dirname, 'imagens')));
 app.use(express.json());
 
 //Habilitar o CORS para todas as requisições
@@ -167,12 +169,15 @@ function createTable(){
 //rota para obter uma pergunta aleatoria do banco de dados
 app.get('/api/pergunta', (req, res) => {
 
-    const disciplina = req.query.disciplina;
-    const turma = req.query.turma;
+    const { disciplina, turma, exclusoes} = req.query;
+    const exclusoesArray = exclusoes.split(',').map(Number);
+    // const disciplina = req.query.disciplina;
+    // const turma = req.query.turma;
 
-    query = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM() LIMIT 1`;
+    // query = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? AND id != ? ORDER BY RANDOM() LIMIT 1`;
+    const sql = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? AND id NOT IN (${exclusoesArray.map(() => '?').join(', ')}) ORDER BY RANDOM() LIMIT 1`;
 
-    db.get(query, [disciplina, turma], (err, row) => {
+    db.get(sql, [disciplina, turma, ...exclusoesArray], (err, row) => {
         if(err){
             res.status(500).json({ error: err.message });
             return;
@@ -277,6 +282,8 @@ app.post('/api/completed', (req, res) => {
 
 app.post('/api/upload',upload.single('imagem'), (req, res) => {
 
+    const { originalname } = req.file;
+
     try {
         if(!req.file){
             return res.status(400).send('Nenhuma imagem foi enviada');
@@ -292,6 +299,7 @@ app.post('/api/upload',upload.single('imagem'), (req, res) => {
 app.get('/api/imagens/:imagem', (req, res) => {
     const img  = req.params;
     const imagemPath = path.join(__dirname, 'imagens', img.imagem);
+    console.log(imagemPath);
     res.sendFile(imagemPath);
 });
 
@@ -380,6 +388,46 @@ app.get('/api/pergunta/:id', (req, res) => {
         }
         res.status(200).json(row);
     })
+});
+
+app.put('/api/editar-pergunta/:id', (req, res) => {
+    const {id} = req.params;
+    const { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turma} =  req.body;
+
+    const sql = `UPDATE perguntas SET pergunta = ?, alternativa1 = ?, alternativa2 = ?, alternativa3 = ?, alternativa4 = ?, resposta = ?, disciplina = ?, turma = ? WHERE id = ?`;
+    db.run(sql, [pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turma, id], function(err) {
+        if(err){
+            console.error(err.message);
+        } else {
+            console.log(`Pergunta com ID ${id} atualizada com sucesso`);
+        }
+    });
+});
+
+app.post('/api/uploadCSV', uploadCsv.single('file'), (req, res) => {
+    const results = [];
+
+    fs.createReadStream(req.file.path)
+    .pipe(csv({ separator: ';' }))
+    .on('data', (data) => results.push(data))
+    .on('end', () => {
+        results.forEach((row) => {
+            adicionarPerguntaSeNova(row.pergunta, row.resposta1, row.resposta2, row.resposta3, row.resposta4, Number(row.numero_da_resposta), row.disciplina, row.turma);
+        });
+    });
+});
+
+// Rota para deletar a última pergunta da tabela 'perguntas'
+app.delete('/api/deletar-ultima-pergunta', (req, res) => {
+  db.serialize(() => {
+    db.run("DELETE FROM perguntas WHERE ROWID = (SELECT MAX(ROWID) FROM perguntas)", (err) => {
+      if (err) {
+        res.status(500).send({ error: err.message });
+      } else {
+        res.status(200).send('Última pergunta deletada com sucesso.');
+      }
+    });
+  });
 });
 
 const PORT = process.env.PORT || 5000;

@@ -27,7 +27,7 @@ function Home(props) {
 
     return (
         <div className="home">
-            <h1>Show Matemático</h1>
+            <h1>Quiz</h1>
             <div className="form-group">
                 <label htmlFor="nome">Digite seu Nome</label>
                 <input type="text" name="nome" value={props.name} placeholder="Digite seu Nome" onChange={handleInputChange}/>

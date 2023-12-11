@@ -22,7 +22,21 @@ function NewQuestion(props) {
     const [imageName, setImageName] = useState('');
     const [newNameImg, setNewNameImg] = useState('');
     const [disciplinaPesquisada, setDisciplinaPesquisa] = useState('');
+    const [editarPerguntaID, setEditarPerguntaID] = useState(-1);
     const fileInputRef = useRef(null);
+    const perguntaRef = useRef();
+    const [erroEnvio, setErroEnvio] = useState(false);
+    const [file, setFile] = useState(null);
+
+    const getPerguntaById = (id) => {
+        api.get(`/api/pergunta/${id}`)
+        .then(response => {
+            setDadosPesquisados(response.data);
+        })
+        .catch(error => {
+
+        })
+    }
 
     useEffect(() => {
 
@@ -59,14 +73,7 @@ function NewQuestion(props) {
 
     useEffect(() => {
         if (pesquisa && !isNaN(pesquisa)){
-            api.get(`/api/pergunta/${pesquisa}`)
-            .then(response => {
-                setDadosPesquisados(response.data);
-                console.log(response.data);
-            })
-            .catch(error => {
-
-            })
+            getPerguntaById(pesquisa);
         }
         else{
             if (disciplinaPesquisada === ''){
@@ -101,6 +108,20 @@ function NewQuestion(props) {
     }, [pesquisa]);
 
     const textareaRef = useRef(null);
+
+    const handleEditarPergunta = (event) => {
+        const id = Number(event.target.textContent.slice(0,5));
+        getPerguntaById(id);
+        setEditarPerguntaID(id);
+        setPergunta(dadosPesquisados[0]?.pergunta);
+        setAlternativa1(dadosPesquisados[0]?.alternativa1);
+        setAlternativa2(dadosPesquisados[0]?.alternativa2);
+        setAlternativa3(dadosPesquisados[0]?.alternativa3);
+        setAlternativa4(dadosPesquisados[0]?.alternativa4);
+        setResposta(dadosPesquisados[0]?.resposta);
+        setDisciplina(dadosPesquisados[0]?.disciplina);
+        setTurma(dadosPesquisados[0]?.turma);
+    }
 
     const handlePerguntaChange = (event) => {
         setPergunta(event.target.value);
@@ -271,7 +292,12 @@ function NewQuestion(props) {
             }
         };
 
-        getID();
+        if (editarPerguntaID === -1){
+            getID();
+        } else{
+            setNewNameImg(editarPerguntaID);
+        }
+
     }, [enviado]);
 
     const sendImage = async () => {
@@ -285,7 +311,7 @@ function NewQuestion(props) {
                 }
             });
 
-            const data = await response.data;
+            // const data = await response.data;
             setImageName(response.data.imageName);
         } catch(error) {
 
@@ -296,49 +322,115 @@ function NewQuestion(props) {
         setImagem(event.target.files[0]);
     };
 
+
     const sendQuestion = () => {
 
         setEnviado(true);
 
-        try {
-            const response = api.post('/api/addquestion', {
-                pergunta: pergunta,
-                alternativa1: alternativa1,
-                alternativa2: alternativa2,
-                alternativa3: alternativa3,
-                alternativa4: alternativa4,
-                resposta: resposta,
-                disciplina: disciplina,
-                turma: turma
-            });
+        if(editarPerguntaID === -1){
+            try {
+                const response = api.post('/api/addquestion', {
+                    pergunta: pergunta,
+                    alternativa1: alternativa1,
+                    alternativa2: alternativa2,
+                    alternativa3: alternativa3,
+                    alternativa4: alternativa4,
+                    resposta: resposta,
+                    disciplina: disciplina,
+                    turma: turma
+                });
 
-        } catch(error) {
+                setTimeout(() => {
+                    setErroEnvio(false);
+                    setEnviado(false);
+                    setPergunta('');
+                    setAlternativa1('');
+                    setAlternativa2('');
+                    setAlternativa3('');
+                    setAlternativa4('');
+                    setEditarPerguntaID(-1);
+                    if(fileInputRef.current){
+                        fileInputRef.current.value = '';
+                    }
+                }, 2000);
 
-        }
+            } catch(error) {
 
-        setTimeout(() => {
-            setEnviado(false);
-            setPergunta('');
-            setAlternativa1('');
-            setAlternativa2('');
-            setAlternativa3('');
-            setAlternativa4('');
-            if(fileInputRef.current){
-                fileInputRef.current.value = '';
             }
-        }, 2000);
+        } else{
+            try{
+                const response = api.put(`/api/editar-pergunta/${editarPerguntaID}`, {
+                    pergunta: pergunta,
+                    alternativa1: alternativa1,
+                    alternativa2: alternativa2,
+                    alternativa3: alternativa3,
+                    alternativa4: alternativa4,
+                    resposta: resposta,
+                    disciplina: disciplina,
+                    turma: turma
+                });
+                setTimeout(() => {
+                    setErroEnvio(false);
+                    setEnviado(false);
+                    setPergunta('');
+                    setAlternativa1('');
+                    setAlternativa2('');
+                    setAlternativa3('');
+                    setAlternativa4('');
+                    setEditarPerguntaID(-1);
+                    if(fileInputRef.current){
+                        fileInputRef.current.value = '';
+                    }
+                }, 2000);
 
+            } catch(erorr){
+
+            }
+        };
     };
 
+    const enviarNovamente = () => {
+        setErroEnvio(false);
+        sendQuestion();
+    }
+
+    const handleScroll = (event) => {
+        if(perguntaRef) {
+            const { deltaY } = event;
+
+            perguntaRef.current.scrollTop += deltaY;
+            event.preventDefault();
+        }
+    }
+
+    const handleFileUpload = (event) => {
+        setFile(event.target.files[0]);
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            await api.post('/api/uploadCSV', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+        } catch(error){
+
+        }
+    };
 
     return (
         <div className="new-question">
             <div className='container-item'>
                 <div className='item'>
-                    <h1>Adicionar Nova Questão</h1>
+                    <h1>{editarPerguntaID === -1 ? "Adicionar Nova Questão" : "Editar Questão"}</h1>
                     <div className="form-group">
                         <label htmlFor="nome">Digite o Problema</label>
-                        <textarea className="pergunta" type="text" name="nome" value={pergunta} onChange={handlePerguntaChange} row="40" cols={100} placeholder="Digite a pergunta aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
+                        <textarea className="pergunta" type="text" name="nome" ref={perguntaRef} value={pergunta} onChange={handlePerguntaChange} row="40" cols={100} placeholder="Digite a pergunta aqui..." style={{ resize: 'none', overflowY: 'auto'}} onWheel={handleScroll}/>
                         <label htmlFor="nome">Selecione Imagem</label>
                         <input className="input-imagem" type="file" ref={fileInputRef} onChange={handleFileChange} />
                         <label htmlFor="nome">Digite a Pergunta 1</label>
@@ -349,33 +441,35 @@ function NewQuestion(props) {
                         <textarea className="alternativa" type="text" name="nome" value={alternativa3} onChange={handleAlternativa3Change} row="20" cols={100} placeholder="Digite a alternativa 3 aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
                         <label htmlFor="nome">Digite a Pergunta 4</label>
                         <textarea className="alternativa" type="text" name="nome" value={alternativa4} onChange={handleAlternativa4Change} row="20" cols={100} placeholder="Digite a alternativa 4 aqui..." style={{ resize: 'none', overflowY: 'hidden'}}/>
-                        <label htmlFor="nome">Resposta</label>
-                        <select onChange={handleEscolherResposta}>
-                            <option value="">Selecione...</option>
-                            <option value="Resposta 1">Resposta 1</option>
-                            <option value="Resposta 2">Resposta 2</option>
-                            <option value="Resposta 3">Resposta 3</option>
-                            <option value="Resposta 4">Resposta 4</option>
-                        </select>
-                        <label htmlFor="nome">Disciplina</label>
-                        <select onChange={handleEscolherDisciplina}>
-                            <option value="">Selecione...</option>
-                            <option value="Matematica">Matemática</option>
-                            <option value="Geografia">Geografia</option>
-                        </select>
-                        <label htmlFor="nome">Turma</label>
-                        <select onChange={handleEscolherTurma}>
-                            <option value="">Selecione...</option>
-                            <option value="6-ano">6º ano</option>
-                            <option value="7-ano">7º ano</option>
-                            <option value="8-ano">8º ano</option>
-                            <option value="9-ano">9º ano</option>
-                            <option value="1-ano">1º ano médio</option>
-                            <option value="2-ano">2º ano médio</option>
-                            <option value="3-ano">3º ano médio</option>
-                        </select>
+                        <div className="container-selecao">
+                            <label htmlFor="nome">Resp</label>
+                            <select value={`Resposta ${resposta}`} onChange={handleEscolherResposta}>
+                                <option value="">Selecione...</option>
+                                <option value="Resposta 1">Resposta 1</option>
+                                <option value="Resposta 2">Resposta 2</option>
+                                <option value="Resposta 3">Resposta 3</option>
+                                <option value="Resposta 4">Resposta 4</option>
+                            </select>
+                            <label htmlFor="nome">Disc</label>
+                            <select value={disciplina} onChange={handleEscolherDisciplina}>
+                                <option value="">Selecione...</option>
+                                <option value="Matematica">Matemática</option>
+                                <option value="Geografia">Geografia</option>
+                            </select>
+                            <label htmlFor="nome">Tur</label>
+                            <select value={turma} onChange={handleEscolherTurma}>
+                                <option value="">Selecione...</option>
+                                <option value="6-ano">6º ano</option>
+                                <option value="7-ano">7º ano</option>
+                                <option value="8-ano">8º ano</option>
+                                <option value="9-ano">9º ano</option>
+                                <option value="1-ano">1º ano médio</option>
+                                <option value="2-ano">2º ano médio</option>
+                                <option value="3-ano">3º ano médio</option>
+                            </select>
+                        </div>
 
-                        <button onClick={sendQuestion}>{!enviado ? 'Adicionar Pergunta' : 'Pergunta Enviada'}</button>
+                        <button onClick={sendQuestion}>{!enviado ? (editarPerguntaID === -1 ? 'Adicionar Pergunta' : 'Editar Pergunta') : 'Pergunta Enviada'}</button>
                     </div>
                 </div>
                 <div className='item'>
@@ -384,6 +478,13 @@ function NewQuestion(props) {
                             <div className='lista-items'>
                             <label htmlFor="nome">Pesquise</label>
                                 <textarea className="pergunta-pesquisar" type="text" name="nome" value={pesquisa} onChange={handlePesquisaChange} row="40" cols={100} placeholder="Digite a pergunta a pesquisar..." style={{ resize: 'none', overflowY: 'hidden'}}/>
+                            </div>
+                            <div>
+                            <label htmlFor="nome">Upload CSV</label>
+                                <form onSubmit={handleSubmit}>
+                                    <input type="file" onChange={handleFileUpload} />
+                                    <button type="submit">Enviar</button>
+                                </form>
                             </div>
                     </div>
                     <div className='form-group-b'>
@@ -421,16 +522,16 @@ function NewQuestion(props) {
                                 </div>
                             )}
 
-                            <div className='lista-items'>
+                            <div className='lista-items ultima-coluna' >
                                 {pesquisa.length === 0 ? (perguntas.map(pergunta => (
-                                    <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
-                                        {pergunta.id.toString().padStart(4, '0')}: {' '}
+                                    <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id} onClick={handleEditarPergunta}>
+                                        {pergunta.id.toString().padStart(5, '0')}: {' '}
                                         {pergunta.pergunta}
                                     </p>
                                 ))) :(
                                     dadosPesquisados.map(pergunta => (
-                                        <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id}>
-                                            {pergunta.id.toString().padStart(4, '0')}: {' '}
+                                        <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id} onClick={handleEditarPergunta}>
+                                            {pergunta.id.toString().padStart(5, '0')}: {' '}
                                             {pergunta.pergunta}
                                         </p>
                                     ))
@@ -438,6 +539,14 @@ function NewQuestion(props) {
                             </div>
                     </div>
                 </div>
+            </div>
+            <div>
+              {erroEnvio ? (
+                <div>
+                  <p>Ocorreu um erro ao enviar a requisição. Deseja tentar novamente?</p>
+                  <button onClick={enviarNovamente}>Tentar Novamente</button>
+                </div>
+              ) : ''}
             </div>
         </div>
     )

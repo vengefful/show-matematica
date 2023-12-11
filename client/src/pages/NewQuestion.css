@@ -1,10 +1,9 @@
 .pergunta {
     width: 350px;
-    height: 200px;
+    height: 100px;
     padding: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
-    resize: 'none';
 }
 
 .pergunta-pesquisar {
@@ -25,7 +24,7 @@
 
 .alternativa {
     width: 350px;
-    height: 50px;
+    height: 20px;
     padding: 10px;
     border-radius: 5px;
     border: 1px solid #ccc;
@@ -98,7 +97,7 @@ box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 }
 
 .lista-perguntas-1 {
-    margin: 0;
+    margin: auto 10px;
     text-align: justify;
     border: 1px solid #ccc;
     background-color:#fbfcfc;
@@ -106,7 +105,7 @@ box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 }
 
 .lista-perguntas-0 {
-    margin: 0;
+    margin: auto 10px;
     text-align: justify;
     border: 1px solid #ccc;
     background-color: #F7CBF1;
@@ -164,4 +163,19 @@ box-shadow: 0 0 0 3px rgba(52, 52, 219, 0.5);
 
 img {
     width: 100%;
+}
+
+.ultima-coluna {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
+.container-selecao {
+    display: flex;
+    margin-top: 10px;
+}
+
+.container label,
+.container select {
+    margin: 10px;
 }

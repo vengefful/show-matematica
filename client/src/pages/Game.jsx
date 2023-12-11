@@ -12,8 +12,10 @@ import Question from '../Components/Question';
 function Game(props) {
 
     const [aleatorio, setAleatorio] = useState([1, 2, 3, 4]);
-    const numQuestions = 2;
+    const numQuestions = 10;
     const navigate = useNavigate();
+    const [perguntasRespondidas, setPerguntasRespondidas] = useState([]);
+    const [exclusoes, setExclusoes] = useState('');
 
     const random = (min,max) => {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -33,11 +35,17 @@ function Game(props) {
     }, [props.rodada]);
 
     useEffect(() => {
+        setExclusoes(perguntasRespondidas.join(','));
+        console.log(exclusoes);
+    }, [perguntasRespondidas]);
+
+    useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await api.get(`/api/pergunta?disciplina=${props.disciplina}&turma=${props.turma.charAt(0)}-ano`);
+                const response = await api.get(`/api/pergunta?disciplina=${props.disciplina}&turma=${props.turma.charAt(0)}-ano&exclusoes=${exclusoes}`);
                 // console.log(response.data);
                 props.setPergunta(response.data);
+                setPerguntasRespondidas([...perguntasRespondidas, response.data.id]);
             } catch(error) {
                 console.log('Erro ao buscar os dados', error);
             }
@@ -63,7 +71,7 @@ function Game(props) {
     const questionAnswered = (resultado) => {
         if (props.rodada < numQuestions){
             if(resultado){
-                props.setNota(prevNota =>  prevNota + 0.5);
+                props.setNota(prevNota =>  prevNota + 1);
             }
             else{
                 //adicionar errou
@@ -73,8 +81,8 @@ function Game(props) {
         }
         else{
             if(resultado){
-                props.setNota(prevNota => prevNota + 0.5);
-                const nota = props.nota + 0.5;
+                props.setNota(prevNota => prevNota + 1);
+                const nota = props.nota + 1;
                 props.setRodada(1);
                 toGameOver(nota);
             } else{
@@ -114,7 +122,7 @@ function Game(props) {
     return (
         <div>
             <div className="score">
-                <p className="score-itens">Acertos: {props.nota * 2} / 20</p>
+                <p className="score-itens">Acertos: {props.nota} / 10</p>
                 <p className="score-itens">Pontuação: {props.nota.toFixed(1)} / 10</p>
             </div>
             <div className="h1-timer">

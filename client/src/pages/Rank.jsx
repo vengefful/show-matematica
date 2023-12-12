@@ -18,7 +18,7 @@ function Rank(props) {
         'Geografia': ['1M02', '1I02'],
     };
     const turmasOrlandoDantas = {
-        'Geografia': ['9A', '8A'],
+        'Geografia': ['9A', '9B', '8A'],
     };
     const turmasSabinoRibeiro = {
         'Geografia': ['6A', '7A'],
@@ -64,7 +64,7 @@ function Rank(props) {
             <div>
 
                 <div className="items-escolha">
-                    <label>Escola:</label>
+                    <label className='label-rank'>Escola:</label>
                     <select value={escola} onChange={handleEscolaChange}>
                         <option value="">Selecione</option>
                         {escolas.map((escola, index) => (
@@ -77,7 +77,7 @@ function Rank(props) {
 
                 {escola === "Lima Castro" && (
                     <div className="items-escolha">
-                        <label>Disciplina:</label>
+                        <label className='label-rank'>Disciplina:</label>
                         <select value={disciplina} onChange={handleDisciplinaChange}>
                             <option value="">Selecione</option>
                             {disciplinas[escola].map((item, index) => (
@@ -92,10 +92,10 @@ function Rank(props) {
 
                 {escola === "Lima Castro" && disciplina && (
                     <div className="items-escolha">
-                        <label>Turma:</label>
+                        <label className='label-rank'>Turma:</label>
                         <select value={turma} onChange={handleTurmaChange}>
                             <option value="">Selecione</option>
-                            {turmasLimaCastro[disciplina].map((item, index) => (
+                            {turmasLimaCastro[disciplina]?.map((item, index) => (
                                 <option key={index} value={item}>
                                     {item}
                                 </option>
@@ -107,7 +107,7 @@ function Rank(props) {
 
                 {escola === "Orlando Dantas" && (
                     <div className="items-escolha">
-                        <label>Disciplina:</label>
+                        <label className='label-rank'>Disciplina:</label>
                         <select value={disciplina} onChange={handleDisciplinaChange}>
                             <option value="">Selecione</option>
                             {disciplinas[escola].map((item, index) => (
@@ -122,7 +122,7 @@ function Rank(props) {
 
                 {escola === "Orlando Dantas" && disciplina && (
                     <div className="items-escolha">
-                        <label>Turma:</label>
+                        <label className='label-rank'>Turma:</label>
                         <select value={turma} onChange={handleTurmaChange}>
                             <option value="">Selecione</option>
                             {turmasOrlandoDantas[disciplina].map((item, index) => (
@@ -137,7 +137,7 @@ function Rank(props) {
 
                 {escola === "Sabino Ribeiro" && (
                     <div className="items-escolha">
-                        <label>Disciplina:</label>
+                        <label className='label-rank'>Disciplina:</label>
                         <select value={disciplina} onChange={handleDisciplinaChange}>
                             <option value="">Selecione</option>
                             {disciplinas[escola].map((item, index) => (
@@ -152,7 +152,7 @@ function Rank(props) {
 
                 {escola === "Sabino Ribeiro" && disciplina && (
                     <div className="items-escolha">
-                        <label>Turma:</label>
+                        <label className='label-rank'>Turma:</label>
                         <select value={turma} onChange={handleTurmaChange}>
                             <option value="">Selecione</option>
                             {turmasSabinoRibeiro[disciplina].map((item, index) => (

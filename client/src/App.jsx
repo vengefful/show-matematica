@@ -31,7 +31,7 @@ const App = () => {
         'Geografia': ['1M02', '1I02'],
     };
     const turmasOrlandoDantas = {
-        'Geografia': ['9A', '8A'],
+        'Geografia': ['9A', '9B', '8A'],
     };
     const turmasSabinoRibeiro = {
         'Geografia': ['6A', '7A'],
@@ -81,6 +81,13 @@ const App = () => {
         setDisciplina(selectedDisciplina);
         setTurma('');
         localStorage.setItem('disciplina', selectedDisciplina);
+        if(selectedDisciplina === 'Geografia'){
+            document.body.className = 'bgG';
+        } else if (selectedDisciplina === 'Matematica'){
+            document.body.className = 'bgM';
+        } else {
+            document.body.className = 'bgP';
+        }
     };
 
     const handleEscolherTurma = (e) => {
@@ -89,44 +96,9 @@ const App = () => {
         localStorage.setItem('turma', selectedTurma);
     }
 
-    // const handleEscolherDisciplina = (event) => {
-    //     const disciplinaSelecionada = event.target.value;
-    //
-    //     switch (disciplinaSelecionada) {
-    //         case 'Matematica':
-    //             setDisciplina('Matematica');
-    //             break;
-    //         case 'Geografia':
-    //             setDisciplina('Geografia');
-    //             break;
-    //         default:
-    //             setDisciplina('');;
-    //             break;
-    //     }
-    // };
-    //
-    // const handleEscolherTurma = (event) => {
-    //     const turmaSelecionada = event.target.value;
-    //
-    //     switch (turmaSelecionada) {
-    //         case '6-ano':
-    //             setTurma('6-ano');
-    //             break;
-    //         case '7-ano':
-    //             setTurma('7-ano');
-    //             break;
-    //         case '8-ano':
-    //             setTurma('8-ano');
-    //             break;
-    //         case '9-ano':
-    //             setTurma('9-ano');
-    //             break;
-    //         default:
-    //             setTurma('');
-    //             break;
-    //     }
-    // };
-
+    useEffect(()=> {
+        document.body.className = 'bgP';
+    }, []);
 
     return (
         <Router>

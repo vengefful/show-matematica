@@ -14,6 +14,15 @@ function Home(props) {
     const toGame = () => {
         props.setRodada(1);
         props.setNota(0);
+
+        if(props.disciplina === 'Geografia'){
+            document.body.className = 'bgG';
+        } else if (props.disciplina === 'Matematica'){
+            document.body.className = 'bgM';
+        } else {
+            document.body.className = 'bgP';
+        }
+
         navigate('/game');
     }
 
@@ -23,6 +32,7 @@ function Home(props) {
         if(nameSave) {
             props.setName(nameSave);
         }
+
     }, []);
 
     return (

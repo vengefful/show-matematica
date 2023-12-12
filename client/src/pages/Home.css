@@ -1,5 +1,22 @@
-body {
-  background-color:aquamarine;
+.bgG {
+    background-image: url('../../public/geo.gif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.bgM {
+    background-image: url('../../public/mat.gif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.bgP {
+    background-image: url('../../public/principal.gif');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 h1{

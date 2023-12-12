@@ -31,12 +31,9 @@
     resize: 'none';
 }
 
-body {
-    background-color:aquamarine;
-}
-
-  h1{
-      text-align: center;
+h1{
+  text-align: center;
+  color: #fff;
 }
 
 .form-group {

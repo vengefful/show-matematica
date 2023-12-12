@@ -1,11 +1,12 @@
-body{
-    font-family: Arial, sans-serif;
-    background-color: #e1fbff;
-}
+/* body{ */
+/*     font-family: Arial, sans-serif; */
+/*     background-color: red; */
+/* } */
 
 .score{
     display: flex;
     justify-content: space-between;
+    color: white;
 }
 
 .score-itens{

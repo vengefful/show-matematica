@@ -23,10 +23,22 @@ function NewQuestion(props) {
     const [newNameImg, setNewNameImg] = useState('');
     const [disciplinaPesquisada, setDisciplinaPesquisa] = useState('');
     const [editarPerguntaID, setEditarPerguntaID] = useState(-1);
+    const [turmasSelecionadas, setTurmasSelecionadas] = useState([]);
     const fileInputRef = useRef(null);
     const perguntaRef = useRef();
     const [erroEnvio, setErroEnvio] = useState(false);
     const [file, setFile] = useState(null);
+    const turmasDisponiveis = [
+        { value: 'EMMAT1A', label: 'EMMAT1A' },
+        { value: 'EMMAT1B', label: 'EMMAT1B' },
+        { value: 'EMMAT1C', label: 'EMMAT1C' },
+        { value: 'EMMAT2A', label: 'EMMAT2A' },
+        { value: 'EMMAT2B', label: 'EMMAT2B' },
+        { value: 'EMMAT2C', label: 'EMMAT2C' },
+        { value: 'EMMAT3A', label: 'EMMAT3A' },
+        { value: 'EMMAT3B', label: 'EMMAT3B' },
+        { value: 'EMMAT3C', label: 'EMMAT3C' }
+    ];
 
     const getPerguntaById = (id) => {
         api.get(`/api/pergunta/${id}`)
@@ -34,19 +46,40 @@ function NewQuestion(props) {
             setDadosPesquisados(response.data);
         })
         .catch(error => {
-
+            console.error('Erro ao buscar pergunta:', error);
         })
     }
 
     useEffect(() => {
+        const carregarPerguntas = async () => {
+            try {
+                console.log('Carregando lista de perguntas...');
+                const response = await fetch('/api/perguntas');
+                const data = await response.json();
+                
+                console.log('Perguntas recebidas:', data);
+                
+                if (data && data.length > 0) {
+                    setPerguntas(data);
+                } else {
+                    console.log('Nenhuma pergunta encontrada');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar perguntas:', error);
+            }
+        };
 
+        carregarPerguntas();
+    }, []);
+
+    useEffect(() => {
         if (disciplinaPesquisada === ''){
             api.get('/api/perguntas')
             .then(response => {
                 setPerguntas(response.data);
             })
             .catch(error => {
-
+                console.error('Erro ao buscar perguntas:', error);
             })
         }
         else {
@@ -56,7 +89,7 @@ function NewQuestion(props) {
                     setPerguntas(response.data.perguntas);
                 })
                 .catch(error => {
-
+                    console.error('Erro ao buscar perguntas:', error);
                 })
             }
             else {
@@ -65,7 +98,7 @@ function NewQuestion(props) {
                     setPerguntas(response.data.perguntas);
                 })
                 .catch(error => {
-
+                    console.error('Erro ao buscar perguntas:', error);
                 })
             }
         }
@@ -75,14 +108,14 @@ function NewQuestion(props) {
         if (pesquisa && !isNaN(pesquisa)){
             getPerguntaById(pesquisa);
         }
-        else{
+        else if (pesquisa && pesquisa.trim() !== ''){
             if (disciplinaPesquisada === ''){
                 api.get(`/api/search-pergunta?text=${pesquisa}`)
                 .then(response => {
                     setDadosPesquisados(response.data);
                 })
                 .catch(error => {
-
+                    console.error('Erro ao buscar perguntas:', error);
                 })
             } else {
                 if (turmaPesquisada === ''){
@@ -91,21 +124,22 @@ function NewQuestion(props) {
                         setDadosPesquisados(response.data);
                     })
                     .catch(error => {
-
+                        console.error('Erro ao buscar perguntas:', error);
                     })
-
-                } else{
+                } else {
                     api.get(`/api/search-pergunta/${disciplinaPesquisada}/${turmaPesquisada}?text=${pesquisa}`)
                     .then(response => {
                         setDadosPesquisados(response.data);
                     })
                     .catch(error => {
-
+                        console.error('Erro ao buscar perguntas:', error);
                     })
                 }
             }
+        } else {
+            setDadosPesquisados([]);
         }
-    }, [pesquisa]);
+    }, [pesquisa, disciplinaPesquisada, turmaPesquisada]);
 
     const textareaRef = useRef(null);
 
@@ -322,9 +356,18 @@ function NewQuestion(props) {
         setImagem(event.target.files[0]);
     };
 
+    const handleTurmaChange = (e) => {
+        const selectedTurma = e.target.value;
+        if (selectedTurma && !turmasSelecionadas.includes(selectedTurma)) {
+            setTurmasSelecionadas([...turmasSelecionadas, selectedTurma]);
+        }
+    };
+
+    const removeTurma = (turmaToRemove) => {
+        setTurmasSelecionadas(turmasSelecionadas.filter(turma => turma !== turmaToRemove));
+    };
 
     const sendQuestion = () => {
-
         setEnviado(true);
 
         if(editarPerguntaID === -1){
@@ -337,7 +380,7 @@ function NewQuestion(props) {
                     alternativa4: alternativa4,
                     resposta: resposta,
                     disciplina: disciplina,
-                    turma: turma
+                    turmas: turmasSelecionadas
                 });
 
                 setTimeout(() => {
@@ -348,45 +391,14 @@ function NewQuestion(props) {
                     setAlternativa2('');
                     setAlternativa3('');
                     setAlternativa4('');
+                    setTurmasSelecionadas([]);
                     setEditarPerguntaID(-1);
-                    if(fileInputRef.current){
-                        fileInputRef.current.value = '';
-                    }
                 }, 2000);
-
             } catch(error) {
-
+                setErroEnvio(true);
+                setEnviado(false);
             }
-        } else{
-            try{
-                const response = api.put(`/api/editar-pergunta/${editarPerguntaID}`, {
-                    pergunta: pergunta,
-                    alternativa1: alternativa1,
-                    alternativa2: alternativa2,
-                    alternativa3: alternativa3,
-                    alternativa4: alternativa4,
-                    resposta: resposta,
-                    disciplina: disciplina,
-                    turma: turma
-                });
-                setTimeout(() => {
-                    setErroEnvio(false);
-                    setEnviado(false);
-                    setPergunta('');
-                    setAlternativa1('');
-                    setAlternativa2('');
-                    setAlternativa3('');
-                    setAlternativa4('');
-                    setEditarPerguntaID(-1);
-                    if(fileInputRef.current){
-                        fileInputRef.current.value = '';
-                    }
-                }, 2000);
-
-            } catch(erorr){
-
-            }
-        };
+        }
     };
 
     const enviarNovamente = () => {
@@ -469,6 +481,39 @@ function NewQuestion(props) {
                             </select>
                         </div>
 
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">Turmas</label>
+                            <select
+                                className="w-full px-3 py-2 border rounded-lg"
+                                onChange={handleTurmaChange}
+                                value=""
+                            >
+                                <option value="">Selecione uma turma</option>
+                                {turmasDisponiveis.map((turma, index) => (
+                                    <option key={index} value={turma.value}>
+                                        {turma.label}
+                                    </option>
+                                ))}
+                            </select>
+                            
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {turmasSelecionadas.map((turma, index) => (
+                                    <div key={index} className="flex items-center bg-blue-100 rounded px-2 py-1">
+                                        <span>{turma}</span>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                removeTurma(turma);
+                                            }}
+                                            className="ml-2 text-red-500 hover:text-red-700"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         <button onClick={sendQuestion}>{!enviado ? (editarPerguntaID === -1 ? 'Adicionar Pergunta' : 'Editar Pergunta') : 'Pergunta Enviada'}</button>
                     </div>
                 </div>
@@ -495,48 +540,49 @@ function NewQuestion(props) {
                 <div className='item'>
                     <h1>Lista de questões ({dadosPesquisados && pesquisa.length > 0 ? dadosPesquisados.length : perguntas.length})</h1>
                     <div className='form-group-b'>
+                        <div className="items-escolha">
+                            <label>Disciplina:</label>
+                            <select value={disciplinaPesquisada} onChange={handleEscolherDisciplinaPesquisa}>
+                                <option value="">Selecione</option>
+                                {props.disciplinasMinistradas?.map((item, index) => (
+                                    <option key={index} value={item}>
+                                        {item}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {disciplinaPesquisada && (
                             <div className="items-escolha">
-                                <label>Disciplina:</label>
-                                <select value={disciplinaPesquisada} onChange={handleEscolherDisciplinaPesquisa}>
+                                <label>Turma:</label>
+                                <select value={turmaPesquisada} onChange={handleEscolherTurmaPesquisada}>
                                     <option value="">Selecione</option>
-                                    {props.disciplinasMinistradas?.map((item, index) => (
-                                        <option key={index} value={item}>
-                                            {item}
+                                    {turmasDisponiveis.map((turma, index) => (
+                                        <option key={index} value={turma.value}>
+                                            {turma.label}
                                         </option>
                                     ))}
                                 </select>
                             </div>
+                        )}
 
-                            {disciplinaPesquisada && (
-                                <div className="items-escolha">
-                                    <label>Série:</label>
-                                    <select value={turmaPesquisada} onChange={handleEscolherTurmaPesquisada}>
-                                        <option value="">Selecione</option>
-                                        {props.seriesMinistradas.map((item, index) => (
-                                            <option key={index} value={item}>
-                                                {`${item.charAt(0)} ano`}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                </div>
-                            )}
-
-                            <div className='lista-items ultima-coluna' >
-                                {pesquisa.length === 0 ? (perguntas.map(pergunta => (
+                        <div className='lista-items ultima-coluna'>
+                            {pesquisa.length === 0 ? (
+                                perguntas.map(pergunta => (
                                     <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id} onClick={handleEditarPergunta}>
                                         {pergunta.id.toString().padStart(5, '0')}: {' '}
                                         {pergunta.pergunta}
                                     </p>
-                                ))) :(
-                                    dadosPesquisados.map(pergunta => (
-                                        <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id} onClick={handleEditarPergunta}>
-                                            {pergunta.id.toString().padStart(5, '0')}: {' '}
-                                            {pergunta.pergunta}
-                                        </p>
-                                    ))
-                                )}
-                            </div>
+                                ))
+                            ) : (
+                                dadosPesquisados.map(pergunta => (
+                                    <p className={`lista-perguntas-${pergunta.id % 2}`} key={pergunta.id} onClick={handleEditarPergunta}>
+                                        {pergunta.id.toString().padStart(5, '0')}: {' '}
+                                        {pergunta.pergunta}
+                                    </p>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

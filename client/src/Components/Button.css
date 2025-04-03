@@ -12,6 +12,12 @@
     transition: background-color 0.3s ease;
 }
 
+.answers-button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
 .answers-button-pressed-win{
     background-color: #228b22;
     color: white;
@@ -48,14 +54,15 @@
 
 /* Media query para desktops */
 @media (min-width: 1025px) {
-    /* Estilos específicos para desktops */
     .answers-button {
-        width: 40%;
+        font-size: 1.2em;
     }
+    
     .answers-button-pressed-lose {
-        width: 40%;
+        font-size: 1.2em;
     }
+    
     .answers-button-pressed-win {
-        width: 40%;
+        font-size: 1.2em;
     }
 }

@@ -6,6 +6,8 @@ function Button(props){
     const [isPressed, setIsPressed] = useState(false);
 
     const handleTouchStart = () => {
+        if (props.disabled) return;
+        
         setIsPressed(true);
         if(props.onTouchStart){
             props.onTouchStart();
@@ -23,7 +25,7 @@ function Button(props){
 
 
     return (
-        <button className={!isPressed ? props.classButton : props.resultado ? 'answers-button-pressed-win' : 'answers-button-pressed-lose'} onClick={handleTouchStart} >
+        <button className={!isPressed ? props.classButton : props.resultado ? 'answers-button-pressed-win' : 'answers-button-pressed-lose'} onClick={handleTouchStart} disabled={props.disabled} >
             {props.text}
         </button>
     );

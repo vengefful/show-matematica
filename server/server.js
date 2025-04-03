@@ -11,6 +11,88 @@ const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
 
+// Configuração do CORS
+app.use(cors({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type']
+}));
+
+// Configuração do body-parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware de logging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
+// Rota de teste
+app.get('/api/test', (req, res) => {
+    console.log('Teste de conexão recebido');
+    res.json({ message: 'Servidor funcionando!' });
+});
+
+//rota para obter uma pergunta aleatoria do banco de dados
+app.get('/api/pergunta', (req, res) => {
+    const { disciplina, turma, exclusoes } = req.query;
+    
+    console.log('Recebida requisição GET em /api/pergunta');
+    console.log('Query params:', { disciplina, turma, exclusoes });
+    
+    if (!disciplina || !turma) {
+        console.log('Erro: Parâmetros disciplina e turma são obrigatórios');
+        res.status(400).json({ error: 'Parâmetros disciplina e turma são obrigatórios' });
+        return;
+    }
+
+    let query = 'SELECT * FROM perguntas WHERE disciplina = ? AND turma = ?';
+    const params = [disciplina, turma];
+    
+    if (exclusoes && exclusoes.trim() !== '') {
+        const exclusoesArray = exclusoes.split(',')
+            .filter(id => id && id.trim() !== '')
+            .map(Number)
+            .filter(id => !isNaN(id));
+            
+        if (exclusoesArray.length > 0) {
+            query += ` AND id NOT IN (${exclusoesArray.map(() => '?').join(',')})`;
+            params.push(...exclusoesArray);
+        }
+    }
+    
+    query += ' ORDER BY RANDOM() LIMIT 1';
+    
+    console.log('Query:', query);
+    console.log('Params:', params);
+    
+    db.get(query, params, (err, row) => {
+        if (err) {
+            console.error('Erro ao buscar pergunta:', err);
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        if (!row) {
+            console.log('Nenhuma pergunta encontrada para os parâmetros:', { disciplina, turma, exclusoes });
+            res.status(404).json({ 
+                error: 'Nenhuma pergunta encontrada',
+                params: { disciplina, turma, exclusoes }
+            });
+            return;
+        }
+        
+        console.log('Pergunta encontrada:', row);
+        res.json(row);
+    });
+});
+
+// Configurar para servir arquivos estáticos do frontend
+app.use(express.static(path.join(__dirname, '../client/build')));
+
+// Configurar para servir arquivos de mídia
+app.use('/imagens', express.static(path.join(__dirname, 'imagens')));
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -30,10 +112,6 @@ const upload = multer({ storage })
 // app.use(express.static(path.join(__dirname, 'rank')));
 // app.use(express.static(path.join(__dirname, 'questoes')));
 // app.use('/imagens', express.static(path.join(__dirname, 'imagens')));
-app.use(express.json());
-
-//Habilitar o CORS para todas as requisições
-app.use(cors());
 
 //criando conexao com o banco de dados sqlite
 const dbR = new sqlite3.Database(dbPathR, (err) => {
@@ -166,28 +244,9 @@ function createTable(){
     });
 }
 
-//rota para obter uma pergunta aleatoria do banco de dados
-app.get('/api/pergunta', (req, res) => {
-
-    const { disciplina, turma, exclusoes} = req.query;
-    const exclusoesArray = exclusoes.split(',').map(Number);
-    // const disciplina = req.query.disciplina;
-    // const turma = req.query.turma;
-
-    // query = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? AND id != ? ORDER BY RANDOM() LIMIT 1`;
-    const sql = `SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? AND id NOT IN (${exclusoesArray.map(() => '?').join(', ')}) ORDER BY RANDOM() LIMIT 1`;
-
-    db.get(sql, [disciplina, turma, ...exclusoesArray], (err, row) => {
-        if(err){
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json(row);
-    });
-});
-
 //retorna todas as perguntas no banco de dados
 app.get('/api/perguntas', (req, res) => {
+    console.log('Recebida requisição GET em /api/perguntas');
     const query = 'SELECT * FROM perguntas';
 
     db.all(query, [], (err, rows) => {
@@ -197,6 +256,7 @@ app.get('/api/perguntas', (req, res) => {
         return;
       }
 
+      console.log(`Encontradas ${rows.length} perguntas`);
       res.json(rows); // Envia as perguntas como resposta em formato JSON
     });
 });
@@ -237,16 +297,36 @@ app.get('/api/ranks', (req, res) => {
     });
 });
 
-app.get('/api/rank/:escola/:disciplina/:turma', (req, res) => {
-    const {escola, disciplina, turma} = req.params;
+// Rota para obter o ranking
+app.get('/api/rank/:turma?/:disciplina?', (req, res) => {
+    const { turma, disciplina } = req.params;
+    let query = 'SELECT * FROM ranks';
+    const params = [];
 
-    dbR.all(`SELECT * FROM ranks WHERE escola = ? AND disciplina = ? AND turma = ? ORDER BY nota DESC, data ASC`, [escola, disciplina, turma], (err, rows) => {
-        if(err) {
-            return res.status(500).json( {error: err.message });
+    if (turma && turma !== '') {
+        query += ' WHERE turma = ?';
+        params.push(turma);
+    }
+
+    if (disciplina && disciplina !== '') {
+        if (params.length > 0) {
+            query += ' AND disciplina = ?';
+        } else {
+            query += ' WHERE disciplina = ?';
         }
-        res.status(200).json({ alunos: rows });
-    })
+        params.push(disciplina);
+    }
 
+    query += ' ORDER BY nota DESC';
+
+    dbR.all(query, params, (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar ranking:', err);
+            res.status(500).json({ error: 'Erro ao buscar ranking' });
+            return;
+        }
+        res.json(rows);
+    });
 });
 
 app.get('/', (req, res) => {
@@ -256,11 +336,34 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/addquestion', (req, res) => {
-    const { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turma } = req.body;
+    const { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turmas } = req.body;
+    
     db.serialize(() => {
-        adicionarPerguntaSeNova(pergunta, alternativa1, alternativa2, alternativa3, alternativa4,resposta, disciplina, turma);
+        // Inserir a pergunta
+        db.run(`INSERT INTO perguntas (pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina],
+            function(err) {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                
+                const perguntaId = this.lastID;
+                
+                // Inserir as turmas associadas
+                const turmasArray = Array.isArray(turmas) ? turmas : [turmas];
+                const stmt = db.prepare('INSERT INTO pergunta_turmas (pergunta_id, turma) VALUES (?, ?)');
+                
+                turmasArray.forEach(turma => {
+                    stmt.run(perguntaId, turma);
+                });
+                
+                stmt.finalize();
+                res.status(200).json({ message: 'Pergunta adicionada com sucesso!' });
+            }
+        );
     });
-
 });
 
 app.post('/api/completed', (req, res) => {
@@ -318,25 +421,40 @@ app.get('/api/ultimoID', (req, res) => {
 });
 
 app.get('/api/perguntas/:disciplina', (req, res) => {
-    const {disciplina} = req.params;
-
-    db.all(`SELECT * FROM perguntas WHERE disciplina = ?`, [disciplina], (err, rows) => {
-        if(err) {
-            return res.status(500).json( {error: err.message });
+    const { disciplina } = req.params;
+    console.log(`Buscando perguntas para disciplina: ${disciplina}`);
+    
+    const query = 'SELECT * FROM perguntas WHERE disciplina = ? ORDER BY id DESC';
+    
+    db.all(query, [disciplina], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar perguntas:', err);
+            res.status(500).json({ error: err.message });
+            return;
         }
-        res.status(200).json({ perguntas: rows });
-    })
+        
+        console.log(`Encontradas ${rows.length} perguntas`);
+        res.json({ perguntas: rows });
+    });
 });
 
+// Rota para buscar perguntas
 app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
-    const {disciplina, turma} = req.params;
-
-    db.all(`SELECT * FROM perguntas WHERE disciplina = ? AND turma = ?`, [disciplina, turma], (err, rows) => {
-        if(err) {
-            return res.status(500).json( {error: err.message });
+    const { disciplina, turma } = req.params;
+    console.log(`Buscando perguntas para disciplina: ${disciplina}, turma: ${turma}`);
+    
+    const query = 'SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM()';
+    
+    db.all(query, [disciplina, turma], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar perguntas:', err);
+            res.status(500).json({ error: err.message });
+            return;
         }
-        res.status(200).json({ perguntas: rows });
-    })
+        
+        console.log(`Encontradas ${rows.length} perguntas`);
+        res.json(rows);
+    });
 });
 
 app.get('/api/search-pergunta/:disciplina', (req, res) => {
@@ -430,7 +548,72 @@ app.delete('/api/deletar-ultima-pergunta', (req, res) => {
   });
 });
 
+// Rota para servir a página de nova pergunta
+app.get('/api/newquestion', (req, res) => {
+    console.log('Recebida requisição GET em /api/newquestion');
+    res.json({ message: 'Página de nova pergunta' });
+});
+
+// Rota para servir o frontend
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+});
+
+// Rota para listar todas as perguntas
+app.get('/api/perguntas', (req, res) => {
+    console.log('Buscando todas as perguntas...');
+    
+    const db = new sqlite3.Database(dbPath);
+    
+    db.all(`
+        SELECT * FROM perguntas 
+        ORDER BY id DESC
+    `, [], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar perguntas:', err);
+            res.status(500).json({ error: 'Erro ao buscar perguntas' });
+            return;
+        }
+        
+        console.log(`Encontradas ${rows.length} perguntas`);
+        console.log('Perguntas:', rows);
+        
+        res.json(rows);
+    });
+    
+    db.close();
+});
+
+// Rota para buscar perguntas por disciplina e turma
+app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
+    const { disciplina, turma } = req.params;
+    console.log(`Buscando perguntas para disciplina: ${disciplina}, turma: ${turma}`);
+    
+    const query = 'SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM()';
+    
+    db.all(query, [disciplina, turma], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar perguntas:', err);
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        console.log(`Encontradas ${rows.length} perguntas`);
+        res.json(rows);
+    });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Servidor Express rodando na porta ${PORT}`);
+const HOST = '0.0.0.0'; // Aceita conexões de qualquer IP da rede local
+
+app.listen(PORT, HOST, () => {
+    console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+    console.log('Para acessar localmente:');
+    console.log('1. Conecte-se à rede WiFi do hotspot');
+    console.log('2. Abra o navegador e acesse:');
+    console.log(`   - http://localhost:${PORT}`);
+    console.log('   - ou http://SEU_IP_LOCAL:${PORT}');
+    console.log('Para descobrir seu IP local, use o comando ipconfig no Windows');
+    console.log(`Banco de dados: ${dbPath}`);
+    console.log(`Banco de rank: ${dbPathR}`);
 });

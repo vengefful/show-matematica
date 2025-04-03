@@ -1,195 +1,93 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Rank.css';
 import api from '../Api';
 
-function Rank(props) {
+const turmasDisponiveis = [
+    { value: 'EMMAT1A', label: 'EMMAT1A' },
+    { value: 'EMMAT1B', label: 'EMMAT1B' },
+    { value: 'EMMAT1C', label: 'EMMAT1C' },
+    { value: 'EMMAT2A', label: 'EMMAT2A' },
+    { value: 'EMMAT2B', label: 'EMMAT2B' },
+    { value: 'EMMAT2C', label: 'EMMAT2C' },
+    { value: 'EMMAT3A', label: 'EMMAT3A' },
+    { value: 'EMMAT3B', label: 'EMMAT3B' },
+    { value: 'EMMAT3C', label: 'EMMAT3C' }
+];
 
-    const [rankData, setRankData] = useState([]);
-    const [disciplina, setDisciplina] = useState(props.disciplina);
-    const [turma, setTurma] = useState(props.turma);
-    const [escola, setEscola] =  useState(props.escola);
-    const disciplinas = {
-        'Lima Castro': ['Matemática', 'Geografia'],
-        'Orlando Dantas': ['Geografia'],
-        'Sabino Ribeiro': ['Geografia']
-    };
-    const turmasLimaCastro = {
-        'Matemática': ['1M02', '1M03', '1I01', '1I02'],
-        'Geografia': ['1M02', '1I02'],
-    };
-    const turmasOrlandoDantas = {
-        'Geografia': ['9A', '9B', '8A'],
-    };
-    const turmasSabinoRibeiro = {
-        'Geografia': ['6A', '7A'],
-    };
-    const escolas = ['Lima Castro', 'Orlando Dantas', 'Sabino Ribeiro'];
+function Rank() {
+    const [rank, setRank] = useState([]);
+    const [turma, setTurma] = useState('');
+    const [disciplina, setDisciplina] = useState('');
 
     useEffect(() => {
-        const fetchData = async () => {
-            try{
-                const response = await api.get(`/api/rank/${escola}/${disciplina}/${turma}`);
-                setRankData(response.data.alunos);
-            } catch(error){
-
+        const fetchRank = async () => {
+            try {
+                const response = await api.get(`/api/rank/${turma}/${disciplina}`);
+                setRank(response.data);
+            } catch (error) {
+                console.log('Erro ao buscar rank:', error);
             }
         };
 
-        fetchData();
-
-    }, [escola, disciplina, turma]);
-
-    const handleEscolaChange = (e) => {
-        const selectedEscola = e.target.value;
-        setEscola(selectedEscola);
-        setDisciplina('');
-    };
-
-    const handleDisciplinaChange = (e) => {
-        const selectedDisciplina = e.target.value;
-        setDisciplina(selectedDisciplina);
-        setTurma('');
-    };
-
-    const handleTurmaChange = (e) => {
-        const selectedTurma = e.target.value;
-        setTurma(selectedTurma);
-    }
+        fetchRank();
+    }, [turma, disciplina]);
 
     return (
-        <div>
-            <h2>Rank</h2>
-            <h3>{!escola ? "" : escola}</h3>
-            <h4>{!disciplina ? "" : disciplina} {!turma ? "" : ` - ${turma}`}</h4>
-            <div>
+        <div className="rank-container">
+            <h1>Ranking</h1>
+            
+            <div className="filters">
+                <select
+                    value={turma}
+                    onChange={(e) => setTurma(e.target.value)}
+                    className="filter-select"
+                >
+                    <option value="">Todas as turmas</option>
+                    {turmasDisponiveis.map((turma, index) => (
+                        <option key={index} value={turma.value}>
+                            {turma.label}
+                        </option>
+                    ))}
+                </select>
 
-                <div className="items-escolha">
-                    <label className='label-rank'>Escola:</label>
-                    <select value={escola} onChange={handleEscolaChange}>
-                        <option value="">Selecione</option>
-                        {escolas.map((escola, index) => (
-                            <option key={index} value={escola}>
-                                {escola}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {escola === "Lima Castro" && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Disciplina:</label>
-                        <select value={disciplina} onChange={handleDisciplinaChange}>
-                            <option value="">Selecione</option>
-                            {disciplinas[escola].map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
-                {escola === "Lima Castro" && disciplina && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Turma:</label>
-                        <select value={turma} onChange={handleTurmaChange}>
-                            <option value="">Selecione</option>
-                            {turmasLimaCastro[disciplina]?.map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
-                {escola === "Orlando Dantas" && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Disciplina:</label>
-                        <select value={disciplina} onChange={handleDisciplinaChange}>
-                            <option value="">Selecione</option>
-                            {disciplinas[escola].map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
-                {escola === "Orlando Dantas" && disciplina && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Turma:</label>
-                        <select value={turma} onChange={handleTurmaChange}>
-                            <option value="">Selecione</option>
-                            {turmasOrlandoDantas[disciplina].map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
-                {escola === "Sabino Ribeiro" && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Disciplina:</label>
-                        <select value={disciplina} onChange={handleDisciplinaChange}>
-                            <option value="">Selecione</option>
-                            {disciplinas[escola].map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
-                {escola === "Sabino Ribeiro" && disciplina && (
-                    <div className="items-escolha">
-                        <label className='label-rank'>Turma:</label>
-                        <select value={turma} onChange={handleTurmaChange}>
-                            <option value="">Selecione</option>
-                            {turmasSabinoRibeiro[disciplina].map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-
-                    </div>
-                )}
-
+                <select
+                    value={disciplina}
+                    onChange={(e) => setDisciplina(e.target.value)}
+                    className="filter-select"
+                >
+                    <option value="">Todas as disciplinas</option>
+                    <option value="Matematica">Matemática</option>
+                    <option value="Portugues">Português</option>
+                    <option value="Geografia">Geografia</option>
+                    <option value="Historia">História</option>
+                    <option value="Ciencias">Ciências</option>
+                </select>
             </div>
 
-
-            <div className="table-container">
-                <table className="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Nota</th>
-                            <th>Nome</th>
-                            <th>Horário</th>
+            <table className="rank-table">
+                <thead>
+                    <tr>
+                        <th>Posição</th>
+                        <th>Nome</th>
+                        <th>Escola</th>
+                        <th>Turma</th>
+                        <th>Disciplina</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rank.map((item, index) => (
+                        <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.nome}</td>
+                            <td>{item.escola}</td>
+                            <td>{item.turma}</td>
+                            <td>{item.disciplina}</td>
+                            <td>{item.nota.toFixed(1)}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {rankData.map((alunos, index) => (
-                            <tr key={alunos.id}>
-                              <td>{index + 1}</td>
-                              <td>{Number(alunos.nota).toFixed(1)}</td>
-                              <td>{alunos.nome}</td>
-                              <td>{alunos.data}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                    ))}
+                </tbody>
+            </table>
         </div>
     );
 }

@@ -71,13 +71,34 @@ function Home(props) {
                 {props.escola === "Lima Castro" && props.disciplina && (
                     <div className="items-escolha">
                         <label>Turma:</label>
-                        <select value={props.turma} onChange={props.handleEscolherTurma}>
-                            <option value="">Selecione</option>
-                            {props.turmasLimaCastro[props.disciplina]?.map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
+                        <select
+                            className="w-full px-3 py-2 border rounded-lg"
+                            value={props.turma}
+                            onChange={props.handleEscolherTurma}
+                        >
+                            <option value="">Selecione uma turma</option>
+                            <option value="EMMAT1A">EMMAT1A</option>
+                            <option value="EMMAT1B">EMMAT1B</option>
+                            <option value="EMMAT1C">EMMAT1C</option>
+                            <option value="EMMAT1D">EMMAT1D</option>
+                            <option value="EMMAT2A">EMMAT2A</option>
+                            <option value="EMMAT2B">EMMAT2B</option>
+                            <option value="EMMAT2C">EMMAT2C</option>
+                            <option value="EMMAT2D">EMMAT2D</option>
+                            <option value="EMMAT2E">EMMAT2E</option>
+                            <option value="EMMAT3A">EMMAT3A</option>
+                            <option value="EMMAT3B">EMMAT3B</option>
+                            <option value="EMMAT3C">EMMAT3C</option>
+                            <option value="ARTIT7TARTEA">ARTIT7TARTEA</option>
+                            <option value="COOPIT7TCOOA">COOPIT7TCOOA</option>
+                            <option value="EMIT7T1A">EMIT7T1A</option>
+                            <option value="EMIT7T1B">EMIT7T1B</option>
+                            <option value="EMIT7T1C">EMIT7T1C</option>
+                            <option value="EMIT7T1D">EMIT7T1D</option>
+                            <option value="EMIT7T2A">EMIT7T2A</option>
+                            <option value="EMIT7T2B">EMIT7T2B</option>
+                            <option value="EMIT7T3A">EMIT7T3A</option>
+                            <option value="EMIT7T3B">EMIT7T3B</option>
                         </select>
 
                     </div>

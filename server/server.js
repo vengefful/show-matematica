@@ -27,18 +27,13 @@ function getLocalIP() {
     return 'localhost';
 }
 
-// Configuração do CORS
-app.use(cors({
-    origin: '*', // Permite acesso de qualquer origem
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type']
-}));
+// Configurar CORS
+app.use(cors());
 
-// Configuração do body-parser
+// Configurar middleware para JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware de logging
+// Configurar middleware para logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
@@ -104,12 +99,6 @@ app.get('/api/pergunta', (req, res) => {
     });
 });
 
-// Configurar para servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-// Configurar para servir arquivos de mídia
-app.use('/imagens', express.static(path.join(__dirname, 'imagens')));
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'imagens/');
@@ -123,11 +112,6 @@ const storage = multer.diskStorage({
 const uploadCsv = multer({ dest: 'uploads/' });
 
 const upload = multer({ storage })
-
-// folder static
-// app.use(express.static(path.join(__dirname, 'rank')));
-// app.use(express.static(path.join(__dirname, 'questoes')));
-// app.use('/imagens', express.static(path.join(__dirname, 'imagens')));
 
 //criando conexao com o banco de dados sqlite
 const dbR = new sqlite3.Database(dbPathR, (err) => {
@@ -269,6 +253,32 @@ function createTable(){
             console.log('Erro ao criar a tabela pergunta_turmas: ', err.message);
         } else{
             console.log('Tabela pergunta_turmas criada no banco de dados');
+        }
+    });
+
+    // Criar tabela de configurações
+    db.run(`CREATE TABLE IF NOT EXISTS configuracoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        numQuestoes INTEGER DEFAULT 20,
+        tempoPorQuestao INTEGER DEFAULT 180,
+        pontuacaoMaxima INTEGER DEFAULT 20,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if(err){
+            console.log('Erro ao criar a tabela configuracoes: ', err.message);
+        } else{
+            console.log('Tabela configuracoes criada no banco de dados');
+            
+            // Inserir configuração padrão se não existir
+            db.run(`INSERT OR IGNORE INTO configuracoes (id, numQuestoes, tempoPorQuestao, pontuacaoMaxima)
+                VALUES (1, 20, 180, 20)`, (err) => {
+                if(err){
+                    console.log('Erro ao inserir configuração padrão: ', err.message);
+                } else{
+                    console.log('Configuração padrão inserida com sucesso');
+                }
+            });
         }
     });
 }
@@ -512,26 +522,38 @@ app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
     const { disciplina, turma } = req.params;
     console.log(`Buscando perguntas para disciplina: ${disciplina}, turma: ${turma}`);
     
-    const query = `
-        SELECT p.* 
-        FROM perguntas p
-        WHERE p.disciplina = ? AND p.turma = ?
-        ORDER BY RANDOM()
-    `;
-    
-    console.log('Query:', query);
-    console.log('Parâmetros:', [disciplina, turma]);
-    
-    db.all(query, [disciplina, turma], (err, rows) => {
+    // Primeiro, buscar as configurações
+    db.get('SELECT numQuestoes FROM configuracoes ORDER BY id DESC LIMIT 1', [], (err, config) => {
         if (err) {
-            console.error('Erro ao buscar perguntas:', err);
+            console.error('Erro ao buscar configurações:', err);
             res.status(500).json({ error: err.message });
             return;
         }
         
-        console.log(`Encontradas ${rows.length} perguntas`);
-        console.log('Perguntas:', rows);
-        res.json(rows);
+        const numQuestoes = config ? config.numQuestoes : 20; // Usar 20 como padrão se não houver configuração
+        
+        const query = `
+            SELECT p.* 
+            FROM perguntas p
+            WHERE p.disciplina = ? AND p.turma = ?
+            ORDER BY RANDOM()
+            LIMIT ?
+        `;
+        
+        console.log('Query:', query);
+        console.log('Parâmetros:', [disciplina, turma, numQuestoes]);
+        
+        db.all(query, [disciplina, turma, numQuestoes], (err, rows) => {
+            if (err) {
+                console.error('Erro ao buscar perguntas:', err);
+                res.status(500).json({ error: err.message });
+                return;
+            }
+            
+            console.log(`Encontradas ${rows.length} perguntas`);
+            console.log('Perguntas:', rows);
+            res.json(rows);
+        });
     });
 });
 
@@ -760,11 +782,6 @@ app.get('/api/newquestion', (req, res) => {
     res.json({ message: 'Página de nova pergunta' });
 });
 
-// Rota para servir o frontend
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
-
 // Rota para listar todas as perguntas
 app.get('/api/perguntas', (req, res) => {
     console.log('Buscando todas as perguntas...');
@@ -824,10 +841,203 @@ app.post('/api/rank', (req, res) => {
 });
 
 app.get('/api/rank', (req, res) => {
-    dbR.all('SELECT id, nome, nota, turma, disciplina, datetime(data_hora, "localtime") as data_hora FROM ranks ORDER BY nota DESC', [], (err, rows) => {
+    const query = `
+        WITH MelhorNota AS (
+            SELECT 
+                nome,
+                turma,
+                disciplina,
+                MAX(nota) as melhor_nota,
+                MAX(datetime(data_hora, 'localtime')) as ultima_tentativa
+            FROM ranks
+            GROUP BY nome, turma, disciplina
+        )
+        SELECT 
+            nome,
+            turma,
+            disciplina,
+            melhor_nota,
+            ultima_tentativa
+        FROM MelhorNota
+        ORDER BY melhor_nota DESC, ultima_tentativa ASC
+    `;
+    
+    dbR.all(query, [], (err, rows) => {
         if (err) {
-            return res.status(500).json({ error: 'Erro ao buscar ranking' });
+            console.error('Erro ao buscar ranking:', err);
+            res.status(500).json({ error: 'Erro ao buscar ranking' });
+            return;
         }
+        console.log('Dados do ranking:', rows);
         res.json(rows);
+    });
+});
+
+// Rota para obter configurações
+app.get('/api/config', (req, res) => {
+    console.log('Recebida requisição GET em /api/config');
+    
+    const query = 'SELECT * FROM configuracoes ORDER BY id DESC LIMIT 1';
+    console.log('Executando query:', query);
+    
+    db.get(query, [], (err, row) => {
+        if (err) {
+            console.error('Erro ao buscar configurações:', err);
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        console.log('Resultado da query:', row);
+        
+        if (!row) {
+            console.log('Nenhuma configuração encontrada, retornando padrão');
+            res.json({
+                numQuestoes: 20,
+                tempoPorQuestao: 180,
+                pontuacaoMaxima: 20
+            });
+            return;
+        }
+        
+        console.log('Configuração encontrada:', row);
+        res.json(row);
+    });
+});
+
+// Rota para atualizar configurações
+app.post('/api/config', (req, res) => {
+    const { numQuestoes, tempoPorQuestao, pontuacaoMaxima } = req.body;
+    
+    console.log('\n=== ATUALIZAÇÃO DE CONFIGURAÇÕES ===');
+    console.log('Dados recebidos:', { 
+        numQuestoes, 
+        tempoPorQuestao, 
+        pontuacaoMaxima 
+    });
+    
+    const query = `
+        UPDATE configuracoes 
+        SET numQuestoes = ?, 
+            tempoPorQuestao = ?, 
+            pontuacaoMaxima = ?, 
+            updated_at = datetime('now')
+        WHERE id = 1
+    `;
+    
+    db.run(query, [numQuestoes, tempoPorQuestao, pontuacaoMaxima], (err) => {
+        if (err) {
+            console.error('Erro ao atualizar configurações:', err);
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        
+        console.log('Configurações atualizadas com sucesso!');
+        console.log('Novas configurações:', {
+            numQuestoes,
+            tempoPorQuestao,
+            pontuacaoMaxima
+        });
+        console.log('===================================\n');
+        
+        res.json({ message: 'Configurações atualizadas com sucesso' });
+    });
+});
+
+// Middleware de erro
+app.use((err, req, res, next) => {
+    console.error('Erro:', err);
+    res.status(500).json({ error: err.message });
+});
+
+app.get('/api/historico/:nome/:turma/:disciplina', (req, res) => {
+    const { nome, turma, disciplina } = req.params;
+    
+    const query = `
+        SELECT 
+            nome,
+            turma,
+            disciplina,
+            nota,
+            data_hora,
+            ROW_NUMBER() OVER (ORDER BY data_hora) as tentativa
+        FROM ranks
+        WHERE nome = ? AND turma = ? AND disciplina = ?
+        ORDER BY data_hora DESC
+    `;
+    
+    dbR.all(query, [nome, turma, disciplina], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar histórico:', err);
+            res.status(500).json({ error: 'Erro ao buscar histórico' });
+            return;
+        }
+        console.log('Histórico encontrado:', rows);
+        res.json(rows);
+    });
+});
+
+app.get('/api/debug/ranks', (req, res) => {
+    const query = `
+        SELECT 
+            nome,
+            turma,
+            disciplina,
+            nota,
+            data_hora
+        FROM ranks
+        ORDER BY data_hora DESC
+    `;
+    
+    dbR.all(query, [], (err, rows) => {
+        if (err) {
+            console.error('Erro ao buscar dados de debug:', err);
+            res.status(500).json({ error: 'Erro ao buscar dados de debug' });
+            return;
+        }
+        console.log('Dados da tabela ranks:', rows);
+        res.json(rows);
+    });
+});
+
+app.get('/api/db/ranks', (req, res) => {
+    const query = `
+        SELECT 
+            nome,
+            turma,
+            disciplina,
+            nota,
+            data_hora
+        FROM ranks
+        ORDER BY data_hora DESC
+    `;
+    
+    dbR.all(query, [], (err, rows) => {
+        if (err) {
+            console.error('Erro ao consultar banco de dados:', err);
+            res.status(500).json({ error: 'Erro ao consultar banco de dados' });
+            return;
+        }
+        console.log('Dados da tabela ranks:', rows);
+        res.json(rows);
+    });
+});
+
+app.delete('/api/limpar-ranking', (req, res) => {
+    console.log('Recebida requisição para limpar o ranking');
+    
+    const query = `DELETE FROM ranks`;
+    
+    dbR.run(query, function(err) {
+        if (err) {
+            console.error('Erro ao limpar o ranking:', err);
+            res.status(500).json({ error: 'Erro ao limpar o ranking' });
+            return;
+        }
+        
+        console.log(`Ranking limpo com sucesso. ${this.changes} registros removidos.`);
+        res.status(200).json({ 
+            message: 'Ranking limpo com sucesso', 
+            registrosRemovidos: this.changes 
+        });
     });
 });

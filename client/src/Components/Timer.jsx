@@ -3,10 +3,9 @@ import './Timer.css';
 import { useNavigate } from 'react-router-dom';
 
 function Timer(props) {
-    const [timer, setTimer] = useState(180);
+    const [timer, setTimer] = useState(props.tempoPorQuestao);
 
     useEffect(() => {
-
         if(timer <= -1){
             props.questionAnswered();
         }
@@ -16,13 +15,12 @@ function Timer(props) {
             }
         }, 1000);
 
-
         return () => clearInterval(intervalId);
     }, [timer]);
 
     useEffect(() => {
-        setTimer(180);
-    }, [props.rodada]);
+        setTimer(props.tempoPorQuestao);
+    }, [props.rodada, props.tempoPorQuestao]);
 
     const formatTime = () => {
         const minutes = Math.floor(timer / 60);

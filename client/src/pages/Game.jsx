@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../Components/Button';
 import './Game.css';
 import { useNavigate } from 'react-router-dom';
@@ -6,31 +6,57 @@ import 'katex/dist/katex.min.css';
 import Latex from 'react-latex-next';
 import Timer from '../Components/Timer';
 import parse from 'html-react-parser';
-import api from '../Api';
+import axios from 'axios';
 import Question from '../Components/Question';
 
-function Game(props) {
+const Game = ({ name, escola, disciplina, turma, setPergunta }) => {
     const navigate = useNavigate();
-    const [buttonsDisabled, setButtonsDisabled] = useState(false);
-    const [perguntasDisponiveis, setPerguntasDisponiveis] = useState([]);
-    const [aleatorio, setAleatorio] = useState([1, 2, 3, 4]);
-    const [perguntaAtual, setPerguntaAtual] = useState(null);
-    const [respostaSelecionada, setRespostaSelecionada] = useState(null);
-    const [mostrarResposta, setMostrarResposta] = useState(false);
-    const [tempoRestante, setTempoRestante] = useState(30);
-    const [erro, setErro] = useState('');
     const [questoes, setQuestoes] = useState([]);
-    const [rodada, setRodada] = useState(0);
+    const [questaoAtual, setQuestaoAtual] = useState(0);
+    const [tempoRestante, setTempoRestante] = useState(0);
     const [nota, setNota] = useState(0);
-    const [config, setConfig] = useState({
-        numQuestoes: 20,
-        tempoPorQuestao: 180,
-        notaMaxima: 20
-    });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [buttonsDisabled, setButtonsDisabled] = useState(false);
+    const [aleatorio, setAleatorio] = useState([1, 2, 3, 4]);
+    const [config, setConfig] = useState(null);
+
+    // Buscar configurações sempre que o componente for montado ou quando disciplina/turma mudar
+    useEffect(() => {
+        carregarConfiguracoes();
+    }, [disciplina, turma]);
+
+    const carregarConfiguracoes = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get('/api/config');
+            console.log('Configurações carregadas:', response.data);
+            setConfig(response.data);
+            await carregarQuestoes(response.data.numQuestoes, response.data.tempoPorQuestao);
+            setLoading(false);
+        } catch (err) {
+            console.error('Erro ao carregar configurações:', err);
+            setError('Erro ao carregar configurações');
+            setLoading(false);
+        }
+    };
+
+    const carregarQuestoes = async (numQuestoes, tempoPorQuestao) => {
+        try {
+            const response = await axios.get(`/api/perguntas/${disciplina}/${turma}`);
+            const questoesEmbaralhadas = response.data;
+            setQuestoes(questoesEmbaralhadas);
+            setTempoRestante(tempoPorQuestao);
+            console.log('Tempo por questão definido como:', tempoPorQuestao);
+        } catch (err) {
+            console.error('Erro ao carregar questões:', err);
+            setError('Erro ao carregar questões');
+        }
+    };
 
     const sendData = async (nota) => {
         try {
-            await api.post(`/api/completed?nome=${props.name}&nota=${nota}&escola=${props.escola}&disciplina=${props.disciplina}&turma=${props.turma}`);
+            await axios.post(`/api/completed?nome=${name}&nota=${nota}&escola=${escola}&disciplina=${disciplina}&turma=${turma}`);
         } catch(error) {
             console.log('Erro ao enviar os dados', error);
         }
@@ -54,70 +80,23 @@ function Game(props) {
         return newArray;
     }
 
-    useEffect(() => {
-        // Carrega configurações salvas
-        const savedConfig = localStorage.getItem('quizConfig');
-        if (savedConfig) {
-            setConfig(JSON.parse(savedConfig));
-        }
-
-        const carregarPerguntas = async () => {
-            try {
-                // Normalizar o nome da disciplina para "Matematica" (sem acento)
-                const disciplina = props.disciplina === "Matemática" ? "Matematica" : props.disciplina;
-                
-                console.log(`Carregando perguntas para disciplina: ${disciplina}, turma: ${props.turma}`);
-                const response = await fetch(`/api/perguntas/${disciplina}/${props.turma}`);
-                const data = await response.json();
-                
-                console.log('Perguntas recebidas:', data);
-                
-                if (!data || data.length === 0) {
-                    alert('Não há perguntas cadastradas para esta disciplina e turma. Por favor, cadastre perguntas antes de iniciar o jogo.');
-                    navigate('/');
-                    return;
-                }
-
-                // Embaralhar todas as perguntas
-                const perguntasEmbaralhadas = shuffle([...data]);
-                
-                // Selecionar apenas as primeiras 5 perguntas
-                const perguntasSelecionadas = perguntasEmbaralhadas.slice(0, config.numQuestoes);
-                
-                setPerguntasDisponiveis(perguntasSelecionadas);
-                
-                // Iniciar com a primeira pergunta
-                setPerguntaAtual(perguntasSelecionadas[0]);
-                props.setPergunta(perguntasSelecionadas[0]);
-                setAleatorio(shuffle([1, 2, 3, 4]));
-                
-            } catch (error) {
-                console.error('Erro ao carregar perguntas:', error);
-                alert('Erro ao carregar perguntas. Tente novamente mais tarde.');
-                navigate('/');
-            }
-        };
-
-        carregarPerguntas();
-    }, [props.disciplina, props.turma, navigate]);
-
     const questionAnswered = (result) => {
         if (result) {
-            setNota(prev => prev + (config.notaMaxima / config.numQuestoes));
+            setNota(prev => prev + (config.pontuacaoMaxima / config.numQuestoes));
         }
-        setRodada(prev => prev + 1);
 
         // Se ainda houver perguntas disponíveis, avançar para a próxima
-        if (perguntasDisponiveis.length > 1) {
+        if (questoes.length > 1) {
             console.log('Avançando para próxima pergunta...');
-            const proximaPergunta = perguntasDisponiveis[1];
-            setPerguntasDisponiveis(prev => prev.slice(1));
-            setPerguntaAtual(proximaPergunta);
-            props.setPergunta(proximaPergunta);
+            setQuestoes(prev => prev.slice(1));
+            setQuestaoAtual(prev => prev + 1);
             setAleatorio(shuffle([1, 2, 3, 4]));
         } else {
             console.log('Última pergunta, encerrando jogo...');
-            toGameOver(nota);
+            // Aguardar um momento para garantir que a pontuação foi atualizada
+            setTimeout(() => {
+                toGameOver(nota + (result ? config.pontuacaoMaxima / config.numQuestoes : 0));
+            }, 100);
         }
     };
 
@@ -151,75 +130,77 @@ function Game(props) {
 
     // Resetar o estado quando mudar de disciplina ou turma
     useEffect(() => {
-        setPerguntasDisponiveis([]);
-        setPerguntaAtual(null);
-        setRespostaSelecionada(null);
-        setMostrarResposta(false);
-        setTempoRestante(30);
-        setRodada(0);
+        setQuestoes([]);
+        setQuestaoAtual(0);
+        setTempoRestante(0);
         setNota(0);
-    }, [props.disciplina, props.turma, props.setPergunta]);
+    }, [disciplina, turma, setPergunta]);
 
     return (
         <div className="game-container">
-            <div className="game-header">
-                <h2>Questão {rodada + 1} de {config.numQuestoes}</h2>
-                <div className="score">
-                    <p>Nota: {nota.toFixed(2)} / {config.notaMaxima}</p>
-                </div>
-                <Timer 
-                    rodada={rodada} 
-                    questionAnswered={questionAnswered}
-                    tempoPorQuestao={config.tempoPorQuestao}
-                />
-            </div>
-            {perguntaAtual ? (
+            {loading ? (
+                <div className="loading">Carregando configurações...</div>
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : config && questoes.length > 0 && questoes[0] ? (
                 <>
+                    <div className="game-header">
+                        <h2>Questão {questaoAtual + 1} de {config.numQuestoes}</h2>
+                        <div className="score">
+                            <p>Nota: {nota.toFixed(2)} / {config.pontuacaoMaxima}</p>
+                        </div>
+                        <Timer 
+                            rodada={questaoAtual} 
+                            questionAnswered={questionAnswered}
+                            tempoPorQuestao={config.tempoPorQuestao}
+                            key={questaoAtual}
+                        />
+                    </div>
                     <div className="question" onCopy={handleCopy}>
-                        <Question pergunta={perguntaAtual.pergunta} />
+                        <Question pergunta={questoes[0].pergunta} />
                     </div>
                     <div className="answers-container">
                         <div className="answers">
                             <Button 
                                 classButton="answers-button" 
-                                text={perguntaAtual[`alternativa${aleatorio[0]}`]} 
-                                onClick={() => handleAnswer(perguntaAtual.resposta === aleatorio[0])} 
+                                text={questoes[0][`alternativa${aleatorio[0]}`]} 
+                                onClick={() => handleAnswer(questoes[0].resposta === aleatorio[0])} 
                                 onTouchStart={handleButtonTouchStart} 
                                 onTouchEnd={handleButtonTouchEnd} 
-                                resultado={perguntaAtual.resposta === aleatorio[0]}
+                                resultado={questoes[0].resposta === aleatorio[0]}
                                 disabled={buttonsDisabled}
                             />
                         </div>
                         <div className="answers">
                             <Button 
                                 classButton="answers-button" 
-                                text={perguntaAtual[`alternativa${aleatorio[1]}`]} 
-                                onClick={() => handleAnswer(perguntaAtual.resposta === aleatorio[1])} 
+                                text={questoes[0][`alternativa${aleatorio[1]}`]} 
+                                onClick={() => handleAnswer(questoes[0].resposta === aleatorio[1])} 
                                 onTouchStart={handleButtonTouchStart} 
                                 onTouchEnd={handleButtonTouchEnd} 
-                                resultado={perguntaAtual.resposta === aleatorio[1]}
+                                resultado={questoes[0].resposta === aleatorio[1]}
                                 disabled={buttonsDisabled}
                             />
                         </div>
                         <div className="answers">
                             <Button 
                                 classButton="answers-button" 
-                                text={perguntaAtual[`alternativa${aleatorio[2]}`]} 
-                                onClick={() => handleAnswer(perguntaAtual.resposta === aleatorio[2])} 
+                                text={questoes[0][`alternativa${aleatorio[2]}`]} 
+                                onClick={() => handleAnswer(questoes[0].resposta === aleatorio[2])} 
                                 onTouchStart={handleButtonTouchStart} 
                                 onTouchEnd={handleButtonTouchEnd} 
-                                resultado={perguntaAtual.resposta === aleatorio[2]}
+                                resultado={questoes[0].resposta === aleatorio[2]}
                                 disabled={buttonsDisabled}
                             />
                         </div>
                         <div className="answers">
                             <Button 
                                 classButton="answers-button" 
-                                text={perguntaAtual[`alternativa${aleatorio[3]}`]} 
-                                onClick={() => handleAnswer(perguntaAtual.resposta === aleatorio[3])} 
+                                text={questoes[0][`alternativa${aleatorio[3]}`]} 
+                                onClick={() => handleAnswer(questoes[0].resposta === aleatorio[3])} 
                                 onTouchStart={handleButtonTouchStart} 
                                 onTouchEnd={handleButtonTouchEnd} 
-                                resultado={perguntaAtual.resposta === aleatorio[3]}
+                                resultado={questoes[0].resposta === aleatorio[3]}
                                 disabled={buttonsDisabled}
                             />
                         </div>
@@ -232,4 +213,4 @@ function Game(props) {
     )
 }
 
-export default Game
+export default Game;

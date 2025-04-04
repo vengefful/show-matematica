@@ -179,6 +179,36 @@ db.all('SELECT id, disciplina FROM perguntas', [], (err, rows) => {
 
 console.log('Banco de dados criado e perguntas de exemplo adicionadas!');
 
+// Criar tabela de configurações
+db.run(`
+    CREATE TABLE IF NOT EXISTS configuracoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        numQuestoes INTEGER DEFAULT 20,
+        tempoPorQuestao INTEGER DEFAULT 180,
+        pontuacaoMaxima INTEGER DEFAULT 20,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`, (err) => {
+    if (err) {
+        console.error('Erro ao criar tabela configuracoes:', err);
+    } else {
+        console.log('Tabela configuracoes criada com sucesso');
+        
+        // Inserir configuração padrão se não existir
+        db.run(`
+            INSERT OR IGNORE INTO configuracoes (id, numQuestoes, tempoPorQuestao, pontuacaoMaxima)
+            VALUES (1, 20, 180, 20)
+        `, (err) => {
+            if (err) {
+                console.error('Erro ao inserir configuração padrão:', err);
+            } else {
+                console.log('Configuração padrão inserida com sucesso');
+            }
+        });
+    }
+});
+
 // Fechar conexões
 db.close();
 dbR.close(); 

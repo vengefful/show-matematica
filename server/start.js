@@ -37,12 +37,12 @@ server.stdout.on('data', (data) => {
         console.log('\n==========================================');
         console.log('Para os alunos acessarem o jogo:');
         console.log(`1. Conecte-se à mesma rede WiFi do notebook`);
-        console.log(`2. Abra o navegador e acesse: http://${ip}:3000`);
+        console.log(`2. Abra o navegador e acesse: http://${ip}:3001`);
         console.log('\nPara acessar localmente:');
         console.log(`1. Conecte-se à rede WiFi do hotspot`);
         console.log(`2. Abra o navegador e acesse:`);
-        console.log(`   - http://localhost:5000`);
-        console.log(`   - ou http://${ip}:5000`);
+        console.log(`   - http://localhost:5050`);
+        console.log(`   - ou http://${ip}:5050`);
         console.log('\nPara descobrir seu IP local, use o comando ipconfig no Windows');
         console.log('==========================================\n');
     }

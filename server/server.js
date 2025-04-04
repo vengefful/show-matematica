@@ -11,7 +11,7 @@ const os = require('os');
 const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 const HOST = '0.0.0.0'; // Permite conexões de qualquer IP na rede local
 
 // Função para obter o IP local

@@ -15,22 +15,37 @@ const turmasDisponiveis = [
 ];
 
 function Rank() {
-    const [rank, setRank] = useState([]);
+    const [ranking, setRanking] = useState([]);
     const [turma, setTurma] = useState('');
     const [disciplina, setDisciplina] = useState('');
+    const [paginaAtual, setPaginaAtual] = useState(1);
+    const itensPorPagina = 20;
 
     useEffect(() => {
-        const fetchRank = async () => {
+        const fetchRanking = async () => {
             try {
-                const response = await api.get(`/api/rank/${turma}/${disciplina}`);
-                setRank(response.data);
+                const response = await api.get('/api/rank');
+                setRanking(response.data);
             } catch (error) {
-                console.log('Erro ao buscar rank:', error);
+                console.error('Erro ao buscar ranking:', error);
             }
         };
 
-        fetchRank();
-    }, [turma, disciplina]);
+        fetchRanking();
+    }, []);
+
+    // Filtrar ranking por turma e disciplina
+    const rankingFiltrado = ranking.filter(item => {
+        if (turma && item.turma !== turma) return false;
+        if (disciplina && item.disciplina !== disciplina) return false;
+        return true;
+    });
+
+    // Calcular índices para paginação
+    const indiceUltimoItem = paginaAtual * itensPorPagina;
+    const indicePrimeiroItem = indiceUltimoItem - itensPorPagina;
+    const itensAtuais = rankingFiltrado.slice(indicePrimeiroItem, indiceUltimoItem);
+    const totalPaginas = Math.ceil(rankingFiltrado.length / itensPorPagina);
 
     return (
         <div className="rank-container">
@@ -57,10 +72,7 @@ function Rank() {
                 >
                     <option value="">Todas as disciplinas</option>
                     <option value="Matematica">Matemática</option>
-                    <option value="Portugues">Português</option>
                     <option value="Geografia">Geografia</option>
-                    <option value="Historia">História</option>
-                    <option value="Ciencias">Ciências</option>
                 </select>
             </div>
 
@@ -69,25 +81,49 @@ function Rank() {
                     <tr>
                         <th>Posição</th>
                         <th>Nome</th>
-                        <th>Escola</th>
+                        <th>Nota</th>
                         <th>Turma</th>
                         <th>Disciplina</th>
-                        <th>Nota</th>
+                        <th>Data e Hora</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {rank.map((item, index) => (
-                        <tr key={index}>
-                            <td>{index + 1}</td>
+                    {itensAtuais.map((item, index) => (
+                        <tr key={item.id}>
+                            <td>{indicePrimeiroItem + index + 1}º</td>
                             <td>{item.nome}</td>
-                            <td>{item.escola}</td>
+                            <td>{item.nota}</td>
                             <td>{item.turma}</td>
                             <td>{item.disciplina}</td>
-                            <td>{item.nota.toFixed(1)}</td>
+                            <td>{item.data_hora ? new Date(item.data_hora).toLocaleString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                timeZone: 'America/Sao_Paulo'
+                            }) : 'Data não disponível'}</td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            <div className="pagination">
+                <button 
+                    onClick={() => setPaginaAtual(paginaAtual - 1)} 
+                    disabled={paginaAtual === 1}
+                >
+                    Anterior
+                </button>
+                <span>Página {paginaAtual} de {totalPaginas}</span>
+                <button 
+                    onClick={() => setPaginaAtual(paginaAtual + 1)} 
+                    disabled={paginaAtual === totalPaginas}
+                >
+                    Próxima
+                </button>
+            </div>
         </div>
     );
 }

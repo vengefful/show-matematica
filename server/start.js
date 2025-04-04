@@ -6,6 +6,7 @@ function getLocalIP() {
     const interfaces = os.networkInterfaces();
     for (const name of Object.keys(interfaces)) {
         for (const iface of interfaces[name]) {
+            // Ignora interfaces locais e IPv6
             if (iface.family === 'IPv4' && !iface.internal) {
                 return iface.address;
             }
@@ -37,6 +38,12 @@ server.stdout.on('data', (data) => {
         console.log('Para os alunos acessarem o jogo:');
         console.log(`1. Conecte-se à mesma rede WiFi do notebook`);
         console.log(`2. Abra o navegador e acesse: http://${ip}:3000`);
+        console.log('\nPara acessar localmente:');
+        console.log(`1. Conecte-se à rede WiFi do hotspot`);
+        console.log(`2. Abra o navegador e acesse:`);
+        console.log(`   - http://localhost:5000`);
+        console.log(`   - ou http://${ip}:5000`);
+        console.log('\nPara descobrir seu IP local, use o comando ipconfig no Windows');
         console.log('==========================================\n');
     }
 });

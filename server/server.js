@@ -6,14 +6,30 @@ const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const csv = require('csv-parser');
 const sqlite3 = require("sqlite3").verbose();
 const multer = require('multer');
+const os = require('os');
 
 const app = express();
 const dbPath = path.join(__dirname, 'questoes', 'questions.db');
 const dbPathR = path.join(__dirname, 'rank', 'rank.db');
+const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0'; // Permite conexões de qualquer IP na rede local
+
+// Função para obter o IP local
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
 
 // Configuração do CORS
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: '*', // Permite acesso de qualquer origem
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type']
 }));
@@ -233,13 +249,26 @@ function createTable(){
         alternativa3 TEXT,
         alternativa4 TEXT,
         resposta INTEGER,
-        disciplina,
-        turma
+        disciplina TEXT,
+        turma TEXT
     )`, (err) => {
         if(err){
-            console.log('Erro ao criar a tabela: ', err.message);
+            console.log('Erro ao criar a tabela perguntas: ', err.message);
         } else{
-            console.log('Tabela perguntas criadas no banco de dados');
+            console.log('Tabela perguntas criada no banco de dados');
+        }
+    });
+
+    db.run(`CREATE TABLE IF NOT EXISTS pergunta_turmas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pergunta_id INTEGER,
+        turma TEXT,
+        FOREIGN KEY (pergunta_id) REFERENCES perguntas(id)
+    )`, (err) => {
+        if(err){
+            console.log('Erro ao criar a tabela pergunta_turmas: ', err.message);
+        } else{
+            console.log('Tabela pergunta_turmas criada no banco de dados');
         }
     });
 }
@@ -336,51 +365,91 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/addquestion', (req, res) => {
-    const { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turmas } = req.body;
-    
-    db.serialize(() => {
+    try {
+        const { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turmas } = req.body;
+        
+        // Validar campos obrigatórios
+        const camposFaltantes = [];
+        if (!pergunta) camposFaltantes.push('pergunta');
+        if (!alternativa1) camposFaltantes.push('alternativa 1');
+        if (!alternativa2) camposFaltantes.push('alternativa 2');
+        if (!alternativa3) camposFaltantes.push('alternativa 3');
+        if (!alternativa4) camposFaltantes.push('alternativa 4');
+        if (!resposta) camposFaltantes.push('resposta');
+        if (!disciplina) camposFaltantes.push('disciplina');
+        if (!turmas || turmas.length === 0) camposFaltantes.push('turma');
+
+        if (camposFaltantes.length > 0) {
+            return res.status(400).json({ 
+                error: 'Campos obrigatórios não preenchidos',
+                campos: camposFaltantes,
+                mensagem: `Por favor, preencha os seguintes campos: ${camposFaltantes.join(', ')}`
+            });
+        }
+
+        // Validar tipo da resposta
+        const respostaNum = parseInt(resposta);
+        if (isNaN(respostaNum) || respostaNum < 1 || respostaNum > 4) {
+            return res.status(400).json({ error: 'Resposta deve ser um número entre 1 e 4' });
+        }
+
+        // Validar turmas
+        const turmasArray = Array.isArray(turmas) ? turmas : [turmas];
+        if (turmasArray.length === 0) {
+            return res.status(400).json({ error: 'Pelo menos uma turma deve ser selecionada' });
+        }
+
         // Inserir a pergunta
-        db.run(`INSERT INTO perguntas (pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina],
-            function(err) {
-                if (err) {
-                    res.status(500).json({ error: err.message });
-                    return;
-                }
-                
-                const perguntaId = this.lastID;
-                
-                // Inserir as turmas associadas
-                const turmasArray = Array.isArray(turmas) ? turmas : [turmas];
-                const stmt = db.prepare('INSERT INTO pergunta_turmas (pergunta_id, turma) VALUES (?, ?)');
-                
-                turmasArray.forEach(turma => {
-                    stmt.run(perguntaId, turma);
-                });
-                
-                stmt.finalize();
-                res.status(200).json({ message: 'Pergunta adicionada com sucesso!' });
-            }
-        );
-    });
+        const stmt = db.prepare(`
+            INSERT INTO perguntas (pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turma)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        // Inserir para cada turma
+        for (const turma of turmasArray) {
+            stmt.run(
+                pergunta,
+                alternativa1,
+                alternativa2,
+                alternativa3,
+                alternativa4,
+                respostaNum,
+                disciplina,
+                turma
+            );
+        }
+
+        stmt.finalize();
+        res.status(200).json({ message: 'Pergunta adicionada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao adicionar pergunta:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 app.post('/api/completed', (req, res) => {
     const { nome, nota, escola, disciplina, turma } = req.query;
-    const currentTime = new Date().toLocaleString();
-    console.log(nome,nota,escola,disciplina,turma);
+    
+    if (!nome || !nota || !disciplina || !turma) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    }
 
-    // Insira os dados na tabela 'ranks'
-    dbR.run(`INSERT INTO ranks (nome, nota, data, escola, disciplina, turma) VALUES (?, ?, ?, ?, ?, ?)`,
-        [nome, nota, currentTime, escola, disciplina, turma],
-        function (err) {
-            if (err) {
-                return res.status(500).json({ error: err.message });
-            }
-            res.status(200).json({ message: 'Pessoa adicionada com sucesso!' });
+    const stmt = dbR.prepare('INSERT INTO ranks (nome, nota, turma, disciplina, data_hora) VALUES (?, ?, ?, ?, datetime("now", "localtime"))');
+    stmt.run(nome, nota, turma, disciplina, function(err) {
+        if (err) {
+            console.error('Erro ao salvar pontuação:', err);
+            return res.status(500).json({ error: 'Erro ao salvar pontuação' });
         }
-    );
+        res.json({ 
+            id: this.lastID,
+            nome,
+            nota,
+            turma,
+            disciplina,
+            data_hora: new Date().toISOString()
+        });
+    });
+    stmt.finalize();
 });
 
 app.post('/api/upload',upload.single('imagem'), (req, res) => {
@@ -443,7 +512,15 @@ app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
     const { disciplina, turma } = req.params;
     console.log(`Buscando perguntas para disciplina: ${disciplina}, turma: ${turma}`);
     
-    const query = 'SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM()';
+    const query = `
+        SELECT p.* 
+        FROM perguntas p
+        WHERE p.disciplina = ? AND p.turma = ?
+        ORDER BY RANDOM()
+    `;
+    
+    console.log('Query:', query);
+    console.log('Parâmetros:', [disciplina, turma]);
     
     db.all(query, [disciplina, turma], (err, rows) => {
         if (err) {
@@ -453,6 +530,7 @@ app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
         }
         
         console.log(`Encontradas ${rows.length} perguntas`);
+        console.log('Perguntas:', rows);
         res.json(rows);
     });
 });
@@ -523,16 +601,144 @@ app.put('/api/editar-pergunta/:id', (req, res) => {
 });
 
 app.post('/api/uploadCSV', uploadCsv.single('file'), (req, res) => {
-    const results = [];
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+        }
 
-    fs.createReadStream(req.file.path)
-    .pipe(csv({ separator: ';' }))
-    .on('data', (data) => results.push(data))
-    .on('end', () => {
-        results.forEach((row) => {
-            adicionarPerguntaSeNova(row.pergunta, row.resposta1, row.resposta2, row.resposta3, row.resposta4, Number(row.numero_da_resposta), row.disciplina, row.turma);
+        const results = [];
+        const fileContent = fs.readFileSync(req.file.path, 'utf-8');
+        const lines = fileContent.split('\n');
+        
+        // Validar cabeçalho
+        const header = lines[0].trim().split(';');
+        const expectedHeader = ['pergunta', 'alternativa1', 'alternativa2', 'alternativa3', 'alternativa4', 'resposta', 'turma', 'disciplina'];
+        if (!header.every((h, i) => h.trim() === expectedHeader[i])) {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ 
+                error: 'Cabeçalho inválido. Formato esperado: pergunta;alternativa1;alternativa2;alternativa3;alternativa4;resposta;turma;disciplina',
+                header: header,
+                expected: expectedHeader
+            });
+        }
+        
+        // Pular cabeçalho e processar linhas
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const [pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, turma, disciplina] = line.split(';');
+            
+            // Validar campos obrigatórios
+            if (!pergunta || !alternativa1 || !alternativa2 || !alternativa3 || !alternativa4 || !resposta || !turma || !disciplina) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Formato inválido na linha ${i}. Todos os campos são obrigatórios.`,
+                    linha: i,
+                    campos: { pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, turma, disciplina }
+                });
+            }
+
+            // Validar tipo da resposta
+            const respostaNum = parseInt(resposta);
+            if (isNaN(respostaNum) || respostaNum < 1 || respostaNum > 4) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Resposta inválida na linha ${i}. Deve ser um número entre 1 e 4.`,
+                    linha: i,
+                    resposta: resposta
+                });
+            }
+
+            // Validar turma
+            const turmaTrim = turma.trim();
+            if (!turmaTrim) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Turma não fornecida na linha ${i}. O campo turma é obrigatório.`,
+                    linha: i,
+                    turma: turma
+                });
+            }
+
+            if (!turmaTrim.match(/^(EMMAT[1-3][A-E]|ARTIT7TARTEA|COOPIT7TCOOA|EMIT7T[1-3][A-D]|EMIT7T1A)$/)) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Turma inválida na linha ${i}. Formato deve ser EMMAT[1-3][A-E], ARTIT7TARTEA, COOPIT7TCOOA ou EMIT7T[1-3][A-D].`,
+                    linha: i,
+                    turma: turmaTrim
+                });
+            }
+
+            // Validar disciplina
+            const disciplinaTrim = disciplina.trim();
+            if (!disciplinaTrim) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Disciplina não fornecida na linha ${i}. O campo disciplina é obrigatório.`,
+                    linha: i,
+                    disciplina: disciplina
+                });
+            }
+
+            if (!['Matematica', 'Geografia'].includes(disciplinaTrim)) {
+                fs.unlinkSync(req.file.path);
+                return res.status(400).json({ 
+                    error: `Disciplina inválida na linha ${i}. Deve ser "Matematica" ou "Geografia".`,
+                    linha: i,
+                    disciplina: disciplinaTrim
+                });
+            }
+
+            results.push({
+                pergunta: pergunta.trim(),
+                alternativa1: alternativa1.trim(),
+                alternativa2: alternativa2.trim(),
+                alternativa3: alternativa3.trim(),
+                alternativa4: alternativa4.trim(),
+                resposta: respostaNum,
+                turma: turma.trim(),
+                disciplina: disciplina.trim()
+            });
+        }
+
+        if (results.length === 0) {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ error: 'Nenhuma pergunta válida encontrada no CSV' });
+        }
+
+        // Inserir todas as perguntas
+        const stmt = db.prepare(`
+            INSERT INTO perguntas (pergunta, alternativa1, alternativa2, alternativa3, alternativa4, resposta, disciplina, turma)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        for (const row of results) {
+            stmt.run(
+                row.pergunta,
+                row.alternativa1,
+                row.alternativa2,
+                row.alternativa3,
+                row.alternativa4,
+                row.resposta,
+                row.disciplina,
+                row.turma
+            );
+        }
+
+        stmt.finalize();
+        fs.unlinkSync(req.file.path);
+        res.status(200).json({ 
+            message: 'Perguntas importadas com sucesso!',
+            total: results.length
         });
-    });
+    } catch (error) {
+        console.error('Erro ao processar arquivo CSV:', error);
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Rota para deletar a última pergunta da tabela 'perguntas'
@@ -584,36 +790,44 @@ app.get('/api/perguntas', (req, res) => {
     db.close();
 });
 
-// Rota para buscar perguntas por disciplina e turma
-app.get('/api/perguntas/:disciplina/:turma', (req, res) => {
-    const { disciplina, turma } = req.params;
-    console.log(`Buscando perguntas para disciplina: ${disciplina}, turma: ${turma}`);
-    
-    const query = 'SELECT * FROM perguntas WHERE disciplina = ? AND turma = ? ORDER BY RANDOM()';
-    
-    db.all(query, [disciplina, turma], (err, rows) => {
-        if (err) {
-            console.error('Erro ao buscar perguntas:', err);
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        
-        console.log(`Encontradas ${rows.length} perguntas`);
-        res.json(rows);
-    });
-});
-
-const PORT = process.env.PORT || 5000;
-const HOST = '0.0.0.0'; // Aceita conexões de qualquer IP da rede local
-
+// Iniciar o servidor
 app.listen(PORT, HOST, () => {
     console.log(`Servidor rodando em http://${HOST}:${PORT}`);
-    console.log('Para acessar localmente:');
-    console.log('1. Conecte-se à rede WiFi do hotspot');
-    console.log('2. Abra o navegador e acesse:');
-    console.log(`   - http://localhost:${PORT}`);
-    console.log('   - ou http://SEU_IP_LOCAL:${PORT}');
-    console.log('Para descobrir seu IP local, use o comando ipconfig no Windows');
+    console.log(`Para acessar localmente: http://localhost:${PORT}`);
+    console.log(`Para acessar pela rede: http://SEU_IP_LOCAL:${PORT}`);
     console.log(`Banco de dados: ${dbPath}`);
     console.log(`Banco de rank: ${dbPathR}`);
+});
+
+app.post('/api/rank', (req, res) => {
+    const { nome, nota, turma, disciplina } = req.body;
+    
+    if (!nome || !nota || !turma || !disciplina) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    }
+
+    const stmt = dbR.prepare('INSERT INTO ranks (nome, nota, turma, disciplina, data_hora) VALUES (?, ?, ?, ?, datetime("now", "localtime"))');
+    stmt.run(nome, nota, turma, disciplina, function(err) {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao salvar pontuação' });
+        }
+        res.json({ 
+            id: this.lastID,
+            nome,
+            nota,
+            turma,
+            disciplina,
+            data_hora: new Date().toISOString()
+        });
+    });
+    stmt.finalize();
+});
+
+app.get('/api/rank', (req, res) => {
+    dbR.all('SELECT id, nome, nota, turma, disciplina, datetime(data_hora, "localtime") as data_hora FROM ranks ORDER BY nota DESC', [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar ranking' });
+        }
+        res.json(rows);
+    });
 });

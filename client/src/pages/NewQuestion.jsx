@@ -27,7 +27,10 @@ function NewQuestion(props) {
     const fileInputRef = useRef(null);
     const perguntaRef = useRef();
     const [erroEnvio, setErroEnvio] = useState(false);
-    const [file, setFile] = useState(null);
+    const [csvFile, setCsvFile] = useState(null);
+    const [csvError, setCsvError] = useState('');
+    const [csvSuccess, setCsvSuccess] = useState('');
+
     const turmasDisponiveis = [
         { value: 'EMMAT1A', label: 'EMMAT1A' },
         { value: 'EMMAT1B', label: 'EMMAT1B' },
@@ -367,36 +370,62 @@ function NewQuestion(props) {
         setTurmasSelecionadas(turmasSelecionadas.filter(turma => turma !== turmaToRemove));
     };
 
-    const sendQuestion = () => {
-        setEnviado(true);
-
-        if(editarPerguntaID === -1){
-            try {
-                const response = api.post('/api/addquestion', {
-                    pergunta: pergunta,
-                    alternativa1: alternativa1,
-                    alternativa2: alternativa2,
-                    alternativa3: alternativa3,
-                    alternativa4: alternativa4,
-                    resposta: resposta,
-                    disciplina: disciplina,
-                    turmas: turmasSelecionadas
-                });
-
-                setTimeout(() => {
-                    setErroEnvio(false);
-                    setEnviado(false);
-                    setPergunta('');
-                    setAlternativa1('');
-                    setAlternativa2('');
-                    setAlternativa3('');
-                    setAlternativa4('');
-                    setTurmasSelecionadas([]);
-                    setEditarPerguntaID(-1);
-                }, 2000);
-            } catch(error) {
+    const sendQuestion = async () => {
+        try {
+            // Validar campos obrigatórios
+            if (!disciplina) {
                 setErroEnvio(true);
-                setEnviado(false);
+                setCsvError('Por favor, selecione uma disciplina antes de enviar a pergunta');
+                return;
+            }
+
+            if (!pergunta || !alternativa1 || !alternativa2 || !alternativa3 || !alternativa4 || !resposta || turmasSelecionadas.length === 0) {
+                setErroEnvio(true);
+                setCsvError('Por favor, preencha todos os campos obrigatórios');
+                return;
+            }
+
+            setEnviado(true);
+            setErroEnvio(false);
+            setCsvError('');
+
+            const response = await api.post('/api/addquestion', {
+                pergunta,
+                alternativa1,
+                alternativa2,
+                alternativa3,
+                alternativa4,
+                resposta,
+                disciplina,
+                turmas: turmasSelecionadas
+            });
+
+            // Limpar formulário após sucesso
+            setPergunta('');
+            setAlternativa1('');
+            setAlternativa2('');
+            setAlternativa3('');
+            setAlternativa4('');
+            setResposta(0);
+            setDisciplina('');
+            setTurmasSelecionadas([]);
+            setEditarPerguntaID(-1);
+
+            // Recarregar lista de perguntas
+            const perguntasResponse = await api.get('/api/perguntas');
+            setPerguntas(perguntasResponse.data);
+
+            setEnviado(false);
+        } catch (error) {
+            console.error('Erro ao enviar pergunta:', error);
+            setErroEnvio(true);
+            setEnviado(false);
+            if (error.response?.data?.mensagem) {
+                setCsvError(error.response.data.mensagem);
+            } else if (error.response?.data?.error) {
+                setCsvError(error.response.data.error);
+            } else {
+                setCsvError('Erro ao enviar pergunta');
             }
         }
     };
@@ -415,23 +444,57 @@ function NewQuestion(props) {
         }
     }
 
-    const handleFileUpload = (event) => {
-        setFile(event.target.files[0]);
+    const handleCsvUpload = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.type !== 'text/csv') {
+                setCsvError('Por favor, selecione um arquivo CSV válido');
+                return;
+            }
+            setCsvFile(file);
+            setCsvError('');
+        }
     };
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    const processCsv = async () => {
+        if (!csvFile) {
+            setCsvError('Por favor, selecione um arquivo CSV');
+            return;
+        }
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', csvFile);
 
         try {
-            await api.post('/api/uploadCSV', formData, {
+            setCsvError('');
+            setCsvSuccess('');
+            
+            const response = await api.post('/api/uploadCSV', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-        } catch(error){
 
+            setCsvSuccess(`Questões importadas com sucesso! Total: ${response.data.total}`);
+            setCsvFile(null);
+            
+            // Recarregar lista de perguntas
+            const perguntasResponse = await api.get('/api/perguntas');
+            setPerguntas(perguntasResponse.data);
+        } catch (error) {
+            console.error('Erro ao processar arquivo CSV:', error);
+            if (error.response?.data?.error) {
+                const errorData = error.response.data;
+                if (errorData.linha) {
+                    setCsvError(`Erro na linha ${errorData.linha}: ${errorData.error}`);
+                } else if (errorData.header) {
+                    setCsvError(`Erro no cabeçalho: ${errorData.error}\nCabeçalho encontrado: ${errorData.header.join(';')}\nCabeçalho esperado: ${errorData.expected.join(';')}`);
+                } else {
+                    setCsvError(errorData.error);
+                }
+            } else {
+                setCsvError('Erro ao processar arquivo CSV');
+            }
         }
     };
 
@@ -514,6 +577,29 @@ function NewQuestion(props) {
                             </div>
                         </div>
 
+                        <div className="mb-4">
+                            <label className="block text-gray-700 text-sm font-bold mb-2">Importar Questões via CSV</label>
+                            <input 
+                                type="file" 
+                                accept=".csv" 
+                                onChange={handleCsvUpload}
+                                className="input-csv"
+                            />
+                            {csvError && <p className="error-message">{csvError}</p>}
+                            {csvSuccess && <p className="success-message">{csvSuccess}</p>}
+                            {csvFile && (
+                                <button onClick={processCsv} className="button-import">
+                                    Importar CSV
+                                </button>
+                            )}
+                            <p className="csv-instructions">
+                                Formato do CSV (use ponto e vírgula como separador):<br/>
+                                pergunta;alternativa1;alternativa2;alternativa3;alternativa4;resposta;turma<br/>
+                                Exemplo:<br/>
+                                Qual é 2+2?;3;4;5;6;2;EMMAT1A
+                            </p>
+                        </div>
+
                         <button onClick={sendQuestion}>{!enviado ? (editarPerguntaID === -1 ? 'Adicionar Pergunta' : 'Editar Pergunta') : 'Pergunta Enviada'}</button>
                     </div>
                 </div>
@@ -523,13 +609,6 @@ function NewQuestion(props) {
                             <div className='lista-items'>
                             <label htmlFor="nome">Pesquise</label>
                                 <textarea className="pergunta-pesquisar" type="text" name="nome" value={pesquisa} onChange={handlePesquisaChange} row="40" cols={100} placeholder="Digite a pergunta a pesquisar..." style={{ resize: 'none', overflowY: 'hidden'}}/>
-                            </div>
-                            <div>
-                            <label htmlFor="nome">Upload CSV</label>
-                                <form onSubmit={handleSubmit}>
-                                    <input type="file" onChange={handleFileUpload} />
-                                    <button type="submit">Enviar</button>
-                                </form>
                             </div>
                     </div>
                     <div className='form-group-b'>

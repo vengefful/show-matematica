@@ -8,6 +8,7 @@ import GameOver from './pages/GameOver';
 import Rank from './pages/Rank';
 import Info from './pages/Info';
 import NewQuestion from './pages/NewQuestion';
+import Configuracoes from './pages/Configuracoes';
 
 const App = () => {
 
@@ -116,7 +117,6 @@ const App = () => {
                 <li><NavLink to='/' activeclassname="navitem-active">Home</NavLink></li>
                 <li><NavLink to='/rank' activeclassname="navitem-active">Rank</NavLink></li>
                 <li><NavLink to='/info' activeclassname="navitem-active">Informações</NavLink></li>
-                <li><NavLink to='/newquestion' activeclassname="navitem-active">Nova Pergunta</NavLink></li>
             </nav>
             <Routes>
                 <Route exact path='/' element={<Home name={name} setName={setName} data={data} setRodada={setRodada} setNota={setNota} escola={escola} disciplina={disciplina} turma={turma} escolas={escolas} disciplinas={disciplinas} turmasLimaCastro={turmasLimaCastro} handleEscolherDisciplina={handleEscolherDisciplina} handleEscolherTurma={handleEscolherTurma} handleEscolherEscola={handleEscolherEscola} />} />
@@ -125,6 +125,7 @@ const App = () => {
                 <Route path='/rank' element={<Rank name={name} nota={nota} setNota={setNota} setRodada={setRodada} disciplina={disciplina} turma={turma} escola={escola} />} />
                 <Route path='/info' element={<Info/>} />
                 <Route path='/newquestion' element={<NewQuestion disciplina={disciplina} disciplinasMinistradas={disciplinasMinistradas} handleEscolherDisciplina={handleEscolherDisciplina} seriesMinistradas={seriesMinistradas} />} />
+                <Route path='/configuracoes' element={<Configuracoes/>} />
             </Routes>
         </Router>
     );

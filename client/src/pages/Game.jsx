@@ -19,7 +19,14 @@ function Game(props) {
     const [mostrarResposta, setMostrarResposta] = useState(false);
     const [tempoRestante, setTempoRestante] = useState(30);
     const [erro, setErro] = useState('');
-    const numQuestions = 10;
+    const [questoes, setQuestoes] = useState([]);
+    const [rodada, setRodada] = useState(0);
+    const [nota, setNota] = useState(0);
+    const [config, setConfig] = useState({
+        numQuestoes: 20,
+        tempoPorQuestao: 180,
+        notaMaxima: 20
+    });
 
     const sendData = async (nota) => {
         try {
@@ -48,6 +55,12 @@ function Game(props) {
     }
 
     useEffect(() => {
+        // Carrega configurações salvas
+        const savedConfig = localStorage.getItem('quizConfig');
+        if (savedConfig) {
+            setConfig(JSON.parse(savedConfig));
+        }
+
         const carregarPerguntas = async () => {
             try {
                 // Normalizar o nome da disciplina para "Matematica" (sem acento)
@@ -69,7 +82,7 @@ function Game(props) {
                 const perguntasEmbaralhadas = shuffle([...data]);
                 
                 // Selecionar apenas as primeiras 5 perguntas
-                const perguntasSelecionadas = perguntasEmbaralhadas.slice(0, numQuestions);
+                const perguntasSelecionadas = perguntasEmbaralhadas.slice(0, config.numQuestoes);
                 
                 setPerguntasDisponiveis(perguntasSelecionadas);
                 
@@ -88,10 +101,11 @@ function Game(props) {
         carregarPerguntas();
     }, [props.disciplina, props.turma, navigate]);
 
-    const questionAnswered = (resultado) => {
-        if(resultado) {
-            props.setNota(prevNota => prevNota + 1);
+    const questionAnswered = (result) => {
+        if (result) {
+            setNota(prev => prev + (config.notaMaxima / config.numQuestoes));
         }
+        setRodada(prev => prev + 1);
 
         // Se ainda houver perguntas disponíveis, avançar para a próxima
         if (perguntasDisponiveis.length > 1) {
@@ -101,10 +115,9 @@ function Game(props) {
             setPerguntaAtual(proximaPergunta);
             props.setPergunta(proximaPergunta);
             setAleatorio(shuffle([1, 2, 3, 4]));
-            props.setRodada(prevRodada => prevRodada + 1);
         } else {
             console.log('Última pergunta, encerrando jogo...');
-            toGameOver(props.nota);
+            toGameOver(nota);
         }
     };
 
@@ -143,23 +156,22 @@ function Game(props) {
         setRespostaSelecionada(null);
         setMostrarResposta(false);
         setTempoRestante(30);
-        props.setNota(0);
-        props.setRodada(1);
-    }, [props.disciplina, props.turma, props.setNota, props.setRodada]);
+        setRodada(0);
+        setNota(0);
+    }, [props.disciplina, props.turma, props.setPergunta]);
 
     return (
-        <div>
-            <div className="score">
-                <p className="score-itens">Acertos: {props.nota} / 10</p>
-                <p className="score-itens">Pontuação: {props.nota.toFixed(1)} / 10</p>
-            </div>
-            <div className="h1-timer">
-                <div className="h1-timer-item">
-                    <Timer rodada={props.rodada} questionAnswered={questionAnswered}/>
+        <div className="game-container">
+            <div className="game-header">
+                <h2>Questão {rodada + 1} de {config.numQuestoes}</h2>
+                <div className="score">
+                    <p>Nota: {nota.toFixed(2)} / {config.notaMaxima}</p>
                 </div>
-                <div className="h1-timer-item2">
-                    <h1>Rodada {props.rodada}</h1>
-                </div>
+                <Timer 
+                    rodada={rodada} 
+                    questionAnswered={questionAnswered}
+                    tempoPorQuestao={config.tempoPorQuestao}
+                />
             </div>
             {perguntaAtual ? (
                 <>

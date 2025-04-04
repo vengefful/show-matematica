@@ -9,13 +9,17 @@ module.exports = {
   },
   devServer: {
     port: 3000,
-    host: 'localhost',
+    host: '0.0.0.0',
     allowedHosts: 'all',
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        ws: true,
+        headers: {
+          Connection: 'keep-alive'
+        }
       }
     }
   },
